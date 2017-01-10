@@ -22,8 +22,14 @@
 *.la
 *.a
 *.lib
+*.db
 
 # Executables
 *.exe
 *.out
 *.app
+
+# Folders
+Release
+Debug
+.vs
