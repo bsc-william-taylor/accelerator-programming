@@ -1,2 +1,2 @@
-# accelerator-programming
-Repo for the GPGPU and Accelerator Programming module
+# Accelerator Programming
+Repository for the GPGPU and Accelerator Programming module.
