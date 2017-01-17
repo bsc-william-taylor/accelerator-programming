@@ -3,6 +3,7 @@
 
 #include <cuda_runtime.h>
 
+/*
 template<typename T>
 class DeviceMemory
 {
@@ -10,8 +11,10 @@ class DeviceMemory
 public:
     explicit DeviceMemory(T&& value)
     {
-        cudaMalloc(static_cast<void**>(&this->value), sizeof(T));
-        cudaMemcpy(this->value, &value, sizeof(T), cudaMemcpyHostToDevice);
+        const auto len = bytes();
+
+        cudaMalloc(static_cast<void**>(&this->value), len);
+        cudaMemcpy(this->value, &value, len, cudaMemcpyHostToDevice);
     }
 
     void copyTo(T* destination)
@@ -23,6 +26,8 @@ public:
     {
         return value;
     }
+
+    constexpr unsigned bytes() { return sizeof(T); }
 };
 
 template<typename T>
@@ -49,3 +54,4 @@ public:
         return static_cast<T*>(&value);
     }
 };
+*/
