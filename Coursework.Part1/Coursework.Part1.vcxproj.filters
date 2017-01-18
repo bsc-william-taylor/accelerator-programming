@@ -9,11 +9,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gpu_memory.h">
+    <ClInclude Include="cudaExtensions.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="gpu_kernels.h">
+    <ClInclude Include="cudaKernels.h">
       <Filter>Headers</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cudaExtensions.cpp">
+      <Filter>Headers</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
