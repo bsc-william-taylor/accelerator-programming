@@ -12,8 +12,10 @@ namespace cuda
     using cudaDeviceList = std::vector<cudaDeviceProp>;
     using cudaDeviceFilter = std::function<cudaDeviceProp(cudaDeviceList&)>;
 
-    cudaDeviceProp chooseDevice(cudaDeviceFilter functor = [](cudaDeviceList& list){ return list.front(); });
+    cudaDeviceProp findDevice(cudaDeviceFilter functor = [](cudaDeviceList& list){ return list.front(); });
     cudaError errorCheck(cudaErrorHandler functor = [](int, std::string){});
+    
+    void debugInfo(const cudaDeviceProp& prop);
    
     template<int B, int T, typename K, typename... Args>
     void start(K kernel, Args&&... args)
@@ -81,7 +83,6 @@ namespace cuda
     {
         return pointer;
     }
-
 
     template<typename T>
     void memory<T>::transfer(T destination)

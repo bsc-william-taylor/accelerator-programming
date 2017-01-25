@@ -9,15 +9,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cudaExtensions.h">
+    <ClInclude Include="cuda-utilities.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="cudaKernels.h">
+    <ClInclude Include="cuda-kernels.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="benchmark.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cudaExtensions.cpp">
+    <ClCompile Include="cuda-utilities.cpp">
       <Filter>Headers</Filter>
     </ClCompile>
   </ItemGroup>

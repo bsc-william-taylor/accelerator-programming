@@ -1,8 +1,8 @@
 
 #include <iostream>
 
-#include "cudaExtensions.h"
-#include "cudaKernels.h"
+#include "cuda-utilities.h"
+#include "cuda-kernels.h"
 
 const auto onError = [](auto code, auto msg) 
 {
@@ -17,8 +17,9 @@ int main()
    int numbers3[2024]{0};
 
    const auto bytes = sizeof(numbers1);
-   const auto device = cuda::chooseDevice();
+   const auto device = cuda::findDevice();
 
+   cuda::debugInfo(device);
    cuda::memory<int*> array1{numbers1, bytes};
    cuda::memory<int*> array2{numbers2, bytes};
    cuda::memory<int*> array3{numbers3, bytes};

@@ -1,5 +1,6 @@
 
-#include "cudaExtensions.h"
+#include "cuda-utilities.h"
+#include <iostream>
 
 using std::function;
 using std::string;
@@ -14,6 +15,14 @@ void repeat(unsigned int count, T functor)
     }
 }
 
+void cuda::debugInfo(const cudaDeviceProp& device)
+{
+    std::cout << "CUDA: " << device.major << "." << device.minor << std::endl;
+    std::cout << "GPU: " << device.name << ", " << device.clockRate / 1000000.0 << "GHz" << std::endl;
+    std::cout << "MultiProcessors: " << device.multiProcessorCount << std::endl;
+    std::cout << "Global Memory" << device.totalGlobalMem * 1e-9 << "GBs" << std::endl;
+}
+
 cudaError cuda::errorCheck(cudaErrorHandler functor)
 {
     auto errorCode = cudaGetLastError();
@@ -26,7 +35,7 @@ cudaError cuda::errorCheck(cudaErrorHandler functor)
     return errorCode;
 }
 
-cudaDeviceProp cuda::chooseDevice(cudaDeviceFilter functor)
+cudaDeviceProp cuda::findDevice(cudaDeviceFilter functor)
 {
     int count;
     cudaGetDeviceCount(&count); 
