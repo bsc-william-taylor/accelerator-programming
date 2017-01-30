@@ -1,5 +1,4 @@
 #include "../benchmark.h"
-#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -11,7 +10,6 @@ struct rgb
     unsigned char r, g, b;
 };
 
-// Setting Constants
 const auto MaxIterations = std::numeric_limits<unsigned char>::max();
 const auto FilenameOut = std::string("output.ppm");
 const auto DefaultHeight = 4096;
@@ -21,10 +19,22 @@ const auto cx = -0.6, cy = 0.0;
 const unsigned char numberShades = 16;
 const rgb mapping[numberShades] =
 {
-    { 66, 30, 15 },{ 25,7,26 },{ 9,1,47 },{ 4,4,73 },{ 0,7,100 },
-    { 12, 44, 138 },{ 24,82,177 },{ 57,125,209 },{ 134,181,229 },{ 211,236,248 },
-    { 241, 233, 191 },{ 248,201,95 },{ 255,170,0 },{ 204,128,0 },{ 153,87,0 },
-    { 106, 52, 3 }
+    { 66,  30,   15 },
+    { 25,   7,   26 },
+    { 9,    1,   47 },
+    { 4,    4,   73 },
+    { 0,    7,   100 },
+    { 12,   44,  138 },
+    { 24,   82,  177 },
+    { 57,   125, 209 },
+    { 134,  181, 229 },
+    { 211,  236, 248 },
+    { 241,  233, 191 },
+    { 248,  201, 95 },
+    { 255,  170, 0 },
+    { 204,  128, 0 },
+    { 153,  87,  0 },
+    { 106,  52,  3 }
 };
 
 void writeOutput(const std::string& filename, std::vector<rgb*>& rows, const int width, const int height)
@@ -119,7 +129,7 @@ void calculateMandel(std::vector<rgb*>& rows, const int width, const int height,
 
 int main(int argc, char *argv[])
 {
-    benchmark<measure_in::ms, 3>([&]()
+    benchmark<measure_in::ms, 50>([&]()
     {
         const auto height = argc > 2 ? atoi(argv[2]) : DefaultHeight;
         const auto width = argc > 1 ? atoi(argv[1]) : DefaultWidth;

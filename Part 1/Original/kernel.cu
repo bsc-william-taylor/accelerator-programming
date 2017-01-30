@@ -93,7 +93,7 @@ void calc_mandel(const int width, const int height, const double scale)
 
 int main(int argc, char *argv[])
 {
-    benchmark<measure_in::ms, 20>([&]()
+    benchmark<measure_in::ms, 50>([&]()
     {
         const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
         const int height = (argc > 2) ? std::atoi(argv[2]) : 4096;
