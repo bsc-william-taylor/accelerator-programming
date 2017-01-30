@@ -119,7 +119,7 @@ void calculateMandel(std::vector<rgb*>& rows, const int width, const int height,
 
 int main(int argc, char *argv[])
 {
-    const auto ms = benchmark<measure_in::ms>([&]()
+    benchmark<measure_in::ms, 3>([&]()
     {
         const auto height = argc > 2 ? atoi(argv[2]) : DefaultHeight;
         const auto width = argc > 1 ? atoi(argv[1]) : DefaultWidth;
@@ -132,7 +132,4 @@ int main(int argc, char *argv[])
         calculateMandel(imageRows, width, height, scale);
         writeOutput(FilenameOut, imageRows, width, height);
     });
-
-    std::cout << "Time taken :" << ms << " ms";
-    std::cin.get();
 }
