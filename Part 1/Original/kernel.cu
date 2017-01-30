@@ -1,3 +1,6 @@
+
+#include "../benchmark.h"
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -90,15 +93,20 @@ void calc_mandel(const int width, const int height, const double scale)
 
 int main(int argc, char *argv[])
 {
-    const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
-    const int height = (argc > 2) ? std::atoi(argv[2]) : 4096;
-    const double scale = 1. / (width / 4);
+    const auto ms = benchmark<measure_in::ms>([&]()
+    {
+        const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
+        const int height = (argc > 2) ? std::atoi(argv[2]) : 4096;
+        const double scale = 1. / (width / 4);
 
-    alloc_2d(width, height);
-    calc_mandel(width, height, scale);
-    screen_dump(width, height);
+        alloc_2d(width, height);
+        calc_mandel(width, height, scale);
+        screen_dump(width, height);
 
-    delete[] img_data;
-    delete[] row_ptrs;
-    return 0;
+        delete[] img_data;
+        delete[] row_ptrs;
+    });
+    
+    std::cout << "Time taken :" << ms << " ms";
+    std::cin.get();
 }

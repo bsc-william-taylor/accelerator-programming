@@ -1,7 +1,7 @@
-
+#include "../benchmark.h"
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
 #include <cmath>
 #include <vector>
 #include <limits>
@@ -18,7 +18,6 @@ const auto DefaultHeight = 4096;
 const auto DefaultWidth = 4096;
 const auto cx = -0.6, cy = 0.0;
 
-// Moved out of function 
 const unsigned char numberShades = 16;
 const rgb mapping[numberShades] =
 {
@@ -28,14 +27,16 @@ const rgb mapping[numberShades] =
     { 106, 52, 3 }
 };
 
-void writeOutput(std::vector<rgb*>& rows, const int width, const int height)
+void writeOutput(const std::string& filename, std::vector<rgb*>& rows, const int width, const int height)
 {
-    const auto file = fopen(FilenameOut.c_str(), "w");
+    const auto bytes = width * sizeof(rgb);
+    const auto file = fopen(filename.c_str(), "w");
+
     fprintf(file, "P6\n%d %d\n255\n", width, height);
 
     for (auto i = height - 1; i >= 0; i--)
     {
-        fwrite(rows[i], 1, width * sizeof(rgb), file);
+        fwrite(rows[i], 1, bytes, file);
     }
        
     fclose(file);
@@ -118,15 +119,20 @@ void calculateMandel(std::vector<rgb*>& rows, const int width, const int height,
 
 int main(int argc, char *argv[])
 {
-    const auto height = argc > 2 ? atoi(argv[2]) : DefaultHeight;
-    const auto width = argc > 1 ? atoi(argv[1]) : DefaultWidth;
-    const auto scale = 1.0 / (width / 4);
+    const auto ms = benchmark<measure_in::ms>([&]()
+    {
+        const auto height = argc > 2 ? atoi(argv[2]) : DefaultHeight;
+        const auto width = argc > 1 ? atoi(argv[1]) : DefaultWidth;
+        const auto scale = 1.0 / (width / 4);
 
-    std::vector<rgb> image(width * height);
-    std::vector<rgb*> rows(height);
+        std::vector<rgb> image(width * height);
+        std::vector<rgb*> imageRows(height);
 
-    allocateArrays(image, rows, width, height);
-    calculateMandel(rows, width, height, scale);
-    writeOutput(rows, width, height);
-    return 0;
+        allocateArrays(image, imageRows, width, height);
+        calculateMandel(imageRows, width, height, scale);
+        writeOutput(FilenameOut, imageRows, width, height);
+    });
+
+    std::cout << "Time taken :" << ms << " ms";
+    std::cin.get();
 }
