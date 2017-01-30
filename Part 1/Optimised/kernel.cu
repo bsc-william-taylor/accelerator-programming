@@ -1,121 +1,132 @@
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <cmath>
+#include <vector>
+#include <limits>
 
-#include <stdio.h>
-
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
-
-__global__ void addKernel(int *c, const int *a, const int *b)
+struct rgb
 {
-    int i = threadIdx.x;
-    c[i] = a[i] + b[i];
+    unsigned char r, g, b;
+};
+
+// Setting Constants
+const auto MaxIterations = std::numeric_limits<unsigned char>::max();
+const auto FilenameOut = std::string("output.ppm");
+const auto DefaultHeight = 4096;
+const auto DefaultWidth = 4096;
+const auto cx = -0.6, cy = 0.0;
+
+// Moved out of function 
+const unsigned char numberShades = 16;
+const rgb mapping[numberShades] =
+{
+    { 66, 30, 15 },{ 25,7,26 },{ 9,1,47 },{ 4,4,73 },{ 0,7,100 },
+    { 12, 44, 138 },{ 24,82,177 },{ 57,125,209 },{ 134,181,229 },{ 211,236,248 },
+    { 241, 233, 191 },{ 248,201,95 },{ 255,170,0 },{ 204,128,0 },{ 153,87,0 },
+    { 106, 52, 3 }
+};
+
+void writeOutput(std::vector<rgb*>& rows, const int width, const int height)
+{
+    const auto file = fopen(FilenameOut.c_str(), "w");
+    fprintf(file, "P6\n%d %d\n255\n", width, height);
+
+    for (auto i = height - 1; i >= 0; i--)
+    {
+        fwrite(rows[i], 1, width * sizeof(rgb), file);
+    }
+       
+    fclose(file);
 }
 
-int main()
+void allocateArrays(std::vector<rgb>& img, std::vector<rgb*>& rows, const int width, const int height)
 {
-    const int arraySize = 5;
-    const int a[arraySize] = { 1, 2, 3, 4, 5 };
-    const int b[arraySize] = { 10, 20, 30, 40, 50 };
-    int c[arraySize] = { 0 };
+    rows[0] = img.data();
 
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
+    for (auto i = 1; i < height; ++i)
+    {
+        rows[i] = rows[i - 1] + width;
+    }
+}
+
+void map_colour(rgb * const px)
+{
+    if (px->r == MaxIterations || px->r == 0) 
+    {
+        px->r = 0; 
+        px->g = 0; 
+        px->b = 0;
+    }
+    else 
+    {
+        *px = mapping[px->r % numberShades];
+    }
+}
+
+void calculateMandel(std::vector<rgb*>& rows, const int width, const int height, const double scale)
+{
+    for (auto i = 0; i < height; i++) 
+    {
+        const auto y = (i - height / 2) * scale + cy;
+        auto* px = rows[i];
+
+        for (auto j = 0; j < width; j++, px++) 
+        {
+            const auto x = (j - width / 2) * scale + cx;
+         
+            unsigned char iter = 0;
+      
+            auto zx = hypot(x - .25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+
+            if (x < zx - 2 * zx * zx + .25) 
+            {
+                iter = MaxIterations;
+            }
+
+            if ((x + 1)*(x + 1) + y * y < 1 / 16)
+            {
+             iter = MaxIterations;
+            }
+
+            zx = zy = zx2 = zy2 = 0;
+            do 
+            {
+                zy = 2 * zx * zy + y;
+                zx = zx2 - zy2 + x;
+                zx2 = zx * zx;
+                zy2 = zy * zy;
+            } while (iter++ < MaxIterations && zx2 + zy2 < 4);
+
+            px->r = iter;
+            px->g = iter;
+            px->b = iter;
+        }
     }
 
-    printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-        c[0], c[1], c[2], c[3], c[4]);
+    for (auto i = 0; i < height; ++i) 
+    {
+        auto* px = rows[i];
 
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
+        for (auto j = 0; j < width; ++j, ++px) 
+        {
+            map_colour(px);
+        }
     }
+}
 
+int main(int argc, char *argv[])
+{
+    const auto height = argc > 2 ? atoi(argv[2]) : DefaultHeight;
+    const auto width = argc > 1 ? atoi(argv[1]) : DefaultWidth;
+    const auto scale = 1.0 / (width / 4);
+
+    std::vector<rgb> image(width * height);
+    std::vector<rgb*> rows(height);
+
+    allocateArrays(image, rows, width, height);
+    calculateMandel(rows, width, height, scale);
+    writeOutput(rows, width, height);
     return 0;
-}
-
-// Helper function for using CUDA to add vectors in parallel.
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size)
-{
-    int *dev_a = 0;
-    int *dev_b = 0;
-    int *dev_c = 0;
-    cudaError_t cudaStatus;
-
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        goto Error;
-    }
-
-    // Allocate GPU buffers for three vectors (two input, one output)    .
-    cudaStatus = cudaMalloc((void**)&dev_c, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_a, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMalloc((void**)&dev_b, size * sizeof(int));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
-    }
-
-    // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_a, a, size * sizeof(int), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-    cudaStatus = cudaMemcpy(dev_b, b, size * sizeof(int), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-    // Launch a kernel on the GPU with one thread for each element.
-    addKernel<<<1, size>>>(dev_c, dev_a, dev_b);
-
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
-    }
-    
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        goto Error;
-    }
-
-    // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(c, dev_c, size * sizeof(int), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-Error:
-    cudaFree(dev_c);
-    cudaFree(dev_a);
-    cudaFree(dev_b);
-    
-    return cudaStatus;
 }
