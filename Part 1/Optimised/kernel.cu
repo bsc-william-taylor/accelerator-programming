@@ -1,23 +1,26 @@
-#include "../benchmark.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
 #include <cstdio>
-#include <cstdlib>
+#include <iostream>
 #include <cmath>
 #include <vector>
-#include <limits>
+
+#include "../cuda-utilities.h"
+#include "../benchmark.h"
 
 struct rgb
 {
     unsigned char r, g, b;
 };
 
-const auto MaxIterations = std::numeric_limits<unsigned char>::max();
-const auto FilenameOut = std::string("output.ppm");
-const auto DefaultHeight = 4096;
-const auto DefaultWidth = 4096;
-const auto cx = -0.6, cy = 0.0;
+const auto OutputFilename = std::string("output.ppm");
+const auto Height = 256;
+const auto Width = 256;
 
-const unsigned char numberShades = 16;
-const rgb mapping[numberShades] =
+__constant__ const unsigned char MaxIterations = 255;
+__constant__ const unsigned char numberShades = 16;
+__constant__ const auto cx = -0.6, cy = 0.0;
+__constant__ const rgb mapping[numberShades] =
 {
     { 66,  30,   15 },
     { 25,   7,   26 },
@@ -37,7 +40,55 @@ const rgb mapping[numberShades] =
     { 106,  52,  3 }
 };
 
-void writeOutput(const std::string& filename, std::vector<rgb*>& rows, const int width, const int height)
+__global__ void mandel(rgb* image, int width, int height, double scale)
+{
+    auto px = image;
+
+    for (auto i = 0; i < height; i++)
+    {
+        px = image + i * width;
+
+        for (auto j = 0; j < width; j++, px++)
+        {
+            auto y = (i - height / 2) * scale + cy;
+            auto x = (j - width / 2) * scale + cx;
+            auto zx = hypot(x - .25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+
+
+            unsigned char iter = 0;
+            if (x < zx - 2 * zx * zx + .25 || (x + 1)*(x + 1) + y * y < 1 / 16)
+                iter = MaxIterations;
+
+            do
+            {
+                zy = 2 * zx * zy + y;
+                zx = zx2 - zy2 + x;
+                zx2 = zx * zx;
+                zy2 = zy * zy;
+            } while (iter++ < MaxIterations && zx2 + zy2 < 4);
+
+            *px = { iter };
+        }
+    }
+
+    px = image;
+
+    for(auto i = 0; i < width*height; ++i)
+    {
+        if (px->r == MaxIterations || px->r == 0)
+        {
+            *px = { 0 };
+        }
+        else
+        {
+            *px = mapping[px->r % numberShades];
+        }
+
+        ++px;
+    }
+}
+
+void writePPM(const std::string& filename, std::vector<rgb>& image, const int width, const int height)
 {
     const auto bytes = width * sizeof(rgb);
     const auto file = fopen(filename.c_str(), "w");
@@ -46,100 +97,30 @@ void writeOutput(const std::string& filename, std::vector<rgb*>& rows, const int
 
     for (auto i = height - 1; i >= 0; i--)
     {
-        fwrite(rows[i], 1, bytes, file);
+        fwrite(image.data() + (i * width), 1, bytes, file);
     }
        
     fclose(file);
 }
 
-void allocateArrays(std::vector<rgb>& img, std::vector<rgb*>& rows, const int width, const int height)
+const auto onCUDAError = [](auto number, auto msg)
 {
-    rows[0] = img.data();
-
-    for (auto i = 1; i < height; ++i)
-    {
-        rows[i] = rows[i - 1] + width;
-    }
-}
-
-void map_colour(rgb * const px)
-{
-    if (px->r == MaxIterations || px->r == 0) 
-    {
-        px->r = 0; 
-        px->g = 0; 
-        px->b = 0;
-    }
-    else 
-    {
-        *px = mapping[px->r % numberShades];
-    }
-}
-
-void calculateMandel(std::vector<rgb*>& rows, const int width, const int height, const double scale)
-{
-    for (auto i = 0; i < height; i++) 
-    {
-        const auto y = (i - height / 2) * scale + cy;
-        auto* px = rows[i];
-
-        for (auto j = 0; j < width; j++, px++) 
-        {
-            const auto x = (j - width / 2) * scale + cx;
-         
-            unsigned char iter = 0;
-      
-            auto zx = hypot(x - .25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
-
-            if (x < zx - 2 * zx * zx + .25) 
-            {
-                iter = MaxIterations;
-            }
-
-            if ((x + 1)*(x + 1) + y * y < 1 / 16)
-            {
-             iter = MaxIterations;
-            }
-
-            zx = zy = zx2 = zy2 = 0;
-            do 
-            {
-                zy = 2 * zx * zy + y;
-                zx = zx2 - zy2 + x;
-                zx2 = zx * zx;
-                zy2 = zy * zy;
-            } while (iter++ < MaxIterations && zx2 + zy2 < 4);
-
-            px->r = iter;
-            px->g = iter;
-            px->b = iter;
-        }
-    }
-
-    for (auto i = 0; i < height; ++i) 
-    {
-        auto* px = rows[i];
-
-        for (auto j = 0; j < width; ++j, ++px) 
-        {
-            map_colour(px);
-        }
-    }
-}
+    std::cout << msg << std::endl;
+    std::cin.get();
+};
 
 int main(int argc, char *argv[])
 {
-    benchmark<measure_in::ms, 50>([&]()
-    {
-        const auto height = argc > 2 ? atoi(argv[2]) : DefaultHeight;
-        const auto width = argc > 1 ? atoi(argv[1]) : DefaultWidth;
-        const auto scale = 1.0 / (width / 4);
+    benchmark<measure_in::ms, 1>([&]()
+    {        
+        std::vector<rgb> image(Height * Width);
 
-        std::vector<rgb> image(width * height);
-        std::vector<rgb*> imageRows(height);
-
-        allocateArrays(image, imageRows, width, height);
-        calculateMandel(imageRows, width, height, scale);
-        writeOutput(FilenameOut, imageRows, width, height);
+        cuda::memory<rgb*> imagePointer(image.data(), image.size() * sizeof(rgb));
+        cuda::start<1, 1>(mandel, imagePointer, Width, Height, 1.0 / (Width / 4));
+        
+        imagePointer.transfer(image.data());
+        writePPM(OutputFilename, image, Width, Height);
     });
+    
+    return 0;
 }

@@ -155,7 +155,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\benchmark.h" />
-    <ClInclude Include="..\cuda-kernels.h" />
     <ClInclude Include="..\cuda-utilities.h" />
   </ItemGroup>
   <ItemGroup>

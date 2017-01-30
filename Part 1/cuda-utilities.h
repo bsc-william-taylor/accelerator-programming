@@ -21,6 +21,7 @@ namespace cuda
     void start(K kernel, Args&&... args)
     {
         kernel<<<B, T>>>(std::forward<Args>(args)...);
+        cudaDeviceSynchronize();
     }
 
     template<typename T>
@@ -64,7 +65,7 @@ namespace cuda
     {
         if(pointer == nullptr)
         {
-            cudaMalloc(&pointer, size());
+            auto err = cudaMalloc(&pointer, size());
         }
     }
 
