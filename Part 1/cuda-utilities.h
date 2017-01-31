@@ -3,7 +3,6 @@
 
 #include <cuda_runtime.h>
 #include <functional>
-#include <string>
 #include <vector>
 
 namespace cuda

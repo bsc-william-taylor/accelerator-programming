@@ -1,5 +1,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 #include <cstdio>
 #include <iostream>
 #include <cmath>
@@ -7,6 +8,11 @@
 
 #include "../cuda-utilities.h"
 #include "../benchmark.h"
+
+struct workload
+{
+    int offset, size;
+};
 
 struct rgb
 {
@@ -36,16 +42,26 @@ __constant__ const rgb mapping[numberShades] =
     { 106,  52,  3 }
 };
 
+#define PROCESSORS 8
+
+__device__ workload getWorkLoad(int block, int thread, int width, int height)
+{
+    auto worksize = width*height / PROCESSORS;
+    auto offset = block * worksize;
+    return { offset, offset + worksize };
+}
+
 __global__ void mandel(rgb* image, int width, int height, double scale)
 {
-    auto curX = 0, curY = 0;
-    auto px = image;
+    auto workload = getWorkLoad(blockIdx.x, threadIdx.x, width, height);
+    auto curX = 0, curY = static_cast<int>(blockIdx.x * height / PROCESSORS);
+    auto px = image + workload.offset;
 
-    for(auto i = 0; i < width*height; ++i, ++px)
+    for(auto i = workload.offset; i < workload.size; ++i, ++px)
     {
         auto y = (curY - height / 2) * scale + cy;
         auto x = (curX - width / 2) * scale + cx;
-        auto zx = hypot(x - .25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+        auto zx = hypot(x - 0.25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
 
         unsigned char iter = 0;
 
@@ -71,9 +87,9 @@ __global__ void mandel(rgb* image, int width, int height, double scale)
         }
     }
 
-    px = image;
+    px = image + workload.offset;
 
-    for(auto i = 0; i < width*height; ++i, ++px)
+    for(auto i = workload.offset; i < workload.size; ++i, ++px)
     {
         if (px->r == MaxIterations || px->r == 0)
         {
@@ -110,18 +126,16 @@ const auto onCUDAError = [](auto number, auto msg)
 int main(int argc, char *argv[])
 {
     const auto outputFilename = std::string("output.ppm");
-    const auto height = 256, width = 256;
+    const auto height = 4096, width = 4096;
 
     benchmark<measure_in::ms, 1>([&]()
     {        
         std::vector<rgb> image(height * width);
 
         cuda::memory<rgb*> imagePointer(image.data(), image.size() * sizeof(rgb));
-        cuda::start<1, 1>(mandel, imagePointer, width, height, 1.0 / (width / 4));
+        cuda::start<PROCESSORS, 1>(mandel, imagePointer, width, height, 1.0 / (width / 4));
         
         imagePointer.transfer(image.data());
         writePPM(outputFilename, image, width, height);
     });
-    
-    return 0;
 }

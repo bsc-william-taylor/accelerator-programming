@@ -1,8 +1,5 @@
 Benchmark Results 
 ID, Time (ms) , 
-1,5723
-2,5680
-3,5842
-4,5791
-5,5700
-6,5615
+1,2501
+Total, (ms) Average (ms) 
+2501,2501
