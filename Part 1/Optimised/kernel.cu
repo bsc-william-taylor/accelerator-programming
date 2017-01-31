@@ -13,10 +13,6 @@ struct rgb
     unsigned char r, g, b;
 };
 
-const auto OutputFilename = std::string("output.ppm");
-const auto Height = 256;
-const auto Width = 256;
-
 __constant__ const unsigned char MaxIterations = 255;
 __constant__ const unsigned char numberShades = 16;
 __constant__ const auto cx = -0.6, cy = 0.0;
@@ -42,38 +38,42 @@ __constant__ const rgb mapping[numberShades] =
 
 __global__ void mandel(rgb* image, int width, int height, double scale)
 {
+    auto curX = 0, curY = 0;
     auto px = image;
 
-    for (auto i = 0; i < height; i++)
+    for(auto i = 0; i < width*height; ++i, ++px)
     {
-        px = image + i * width;
+        auto y = (curY - height / 2) * scale + cy;
+        auto x = (curX - width / 2) * scale + cx;
+        auto zx = hypot(x - .25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
 
-        for (auto j = 0; j < width; j++, px++)
+        unsigned char iter = 0;
+
+        if (x < zx - 2 * zx * zx + .25 || (x + 1)*(x + 1) + y * y < 1 / 16)
         {
-            auto y = (i - height / 2) * scale + cy;
-            auto x = (j - width / 2) * scale + cx;
-            auto zx = hypot(x - .25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+            iter = MaxIterations;
+        }
 
+        do
+        {
+            zy = 2 * zx * zy + y;
+            zx = zx2 - zy2 + x;
+            zx2 = zx * zx;
+            zy2 = zy * zy;
+        } while (iter++ < MaxIterations && zx2 + zy2 < 4);
 
-            unsigned char iter = 0;
-            if (x < zx - 2 * zx * zx + .25 || (x + 1)*(x + 1) + y * y < 1 / 16)
-                iter = MaxIterations;
+        *px = { iter };
+        ++curX;
 
-            do
-            {
-                zy = 2 * zx * zy + y;
-                zx = zx2 - zy2 + x;
-                zx2 = zx * zx;
-                zy2 = zy * zy;
-            } while (iter++ < MaxIterations && zx2 + zy2 < 4);
-
-            *px = { iter };
+        if (!(curX < width)) {
+            ++curY;
+            curX = 0;
         }
     }
 
     px = image;
 
-    for(auto i = 0; i < width*height; ++i)
+    for(auto i = 0; i < width*height; ++i, ++px)
     {
         if (px->r == MaxIterations || px->r == 0)
         {
@@ -83,8 +83,6 @@ __global__ void mandel(rgb* image, int width, int height, double scale)
         {
             *px = mapping[px->r % numberShades];
         }
-
-        ++px;
     }
 }
 
@@ -111,15 +109,18 @@ const auto onCUDAError = [](auto number, auto msg)
 
 int main(int argc, char *argv[])
 {
+    const auto outputFilename = std::string("output.ppm");
+    const auto height = 256, width = 256;
+
     benchmark<measure_in::ms, 1>([&]()
     {        
-        std::vector<rgb> image(Height * Width);
+        std::vector<rgb> image(height * width);
 
         cuda::memory<rgb*> imagePointer(image.data(), image.size() * sizeof(rgb));
-        cuda::start<1, 1>(mandel, imagePointer, Width, Height, 1.0 / (Width / 4));
+        cuda::start<1, 1>(mandel, imagePointer, width, height, 1.0 / (width / 4));
         
         imagePointer.transfer(image.data());
-        writePPM(OutputFilename, image, Width, Height);
+        writePPM(outputFilename, image, width, height);
     });
     
     return 0;
