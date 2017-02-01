@@ -31,7 +31,7 @@ __constant__ const rgb Mappings[MappingsLength]
     { 106,  52,  3 }
 };
 
-__global__ void mandel(cuda::launchInfo info, rgb* image, double scale)
+__global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 {
     auto workload = cuda::allocateWork(info, blockIdx.x, threadIdx.x);
     auto pointX = 0, pointY = workload.stride;
@@ -60,6 +60,7 @@ __global__ void mandel(cuda::launchInfo info, rgb* image, double scale)
 
         *px = { iter };
 
+        // must fix this is disgusting
         ++pointX;
 
         if (!(pointX < info.width)) {
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
   
     cuda::launchInfo launchInfo { blocks, threads, width, height };
     cuda::memory<rgb*> imagePointer { image.data(), image.size() * sizeof(rgb) };
-    cuda::start(mandel, launchInfo, imagePointer, scale);
+    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
     cuda::move(imagePointer, image.data());
  
     writeOutput("output.ppm", image.data(), width, height);
