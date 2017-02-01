@@ -17,7 +17,7 @@ void benchmark(Functor&& method, Args&&... args)
     auto total = 0.0;
 
     std::ofstream csvFile("benchmark.csv");
-    csvFile << "Benchmark Results \n";
+    csvFile << "Benchmark Results,  \n";
     csvFile << "ID, Time" << typeString << ", \n";
     
     for (auto i = 1u; i <= times; ++i) 
@@ -32,7 +32,7 @@ void benchmark(Functor&& method, Args&&... args)
         csvFile << i << "," << time << "\n";
     }
 
-    csvFile << "Total," << typeString << "Average" << typeString << "\n";
+    csvFile << "Total" << typeString << ", Average" << typeString << "\n";
     csvFile << total << "," << total / times;
     csvFile.close();
 }
