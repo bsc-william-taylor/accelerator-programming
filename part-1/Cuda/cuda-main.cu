@@ -1,14 +1,16 @@
 #include "cuda-utilities.h"
 #include <cstdio>
-#include <cmath>
 
 struct rgb
 {
     unsigned char r, g, b;
 };
 
-__constant__ const unsigned char MaxIterations = 255;
-__constant__ const unsigned MappingsLength = 16;
+using uchar = unsigned char;
+using uint = unsigned int;
+
+__constant__ const uchar MaxIterations = std::numeric_limits<uchar>::max();
+__constant__ const uint MappingsLength = 16;
 __constant__ const double CenterX = -0.6;
 __constant__ const double CenterY = 0.0;
 __constant__ const rgb Mappings[MappingsLength]
@@ -34,20 +36,19 @@ __constant__ const rgb Mappings[MappingsLength]
 __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 {
     auto workload = cuda::allocateWork(info, blockIdx.x, threadIdx.x);
-    auto pointX = 0, pointY = workload.stride;
     auto px = image + workload.offset;
 
     for(auto i = workload.offset; i < workload.size; ++i, ++px)
     {
-        auto x = (pointX - info.width / 2) * scale + CenterX;
-        auto y = (pointY - info.height / 2) * scale + CenterY;
+        auto x = (i % info.width - info.width / 2) * scale + CenterX;
+        auto y = (i / info.width - info.height / 2) * scale + CenterY;
         auto zx = hypot(x - 0.25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
 
-        unsigned char iter = 0;
+        uchar iterations = 0;
 
         if (x < zx - 2 * zx * zx + .25 || (x + 1)*(x + 1) + y * y < 1 / 16)
         {
-            iter = MaxIterations;
+            iterations = MaxIterations;
         }
 
         do
@@ -56,30 +57,15 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
             zx = zx2 - zy2 + x;
             zx2 = zx * zx;
             zy2 = zy * zy;
-        } while (iter++ < MaxIterations && zx2 + zy2 < 4);
+        } while (iterations++ < MaxIterations && zx2 + zy2 < 4);
 
-        *px = { iter };
-
-        // must fix this is disgusting
-        ++pointX;
-
-        if (!(pointX < info.width)) {
-            ++pointY;
-            pointX = 0;
-        }
-    }
-
-    px = image + workload.offset;
-
-    for(auto i = workload.offset; i < workload.size; ++i, ++px)
-    {
-        if (px->r == MaxIterations || px->r == 0)
+        if (iterations == MaxIterations || iterations == 0)
         {
             *px = { 0 };
         }
         else
         {
-            *px = Mappings[px->r % MappingsLength];
+            *px = Mappings[iterations % MappingsLength];
         }
     }
 }
