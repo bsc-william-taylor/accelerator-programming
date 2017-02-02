@@ -1,4 +1,5 @@
 #include "cuda-utilities.h"
+#inlude "benchmark.h"
 #include <cstdio>
 
 struct rgb
@@ -46,18 +47,26 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 
         uchar iterations = 0;
 
-        if (x < zx - 2 * zx * zx + .25 || (x + 1)*(x + 1) + y * y < 1 / 16)
+        if (x < zx - 2 * zx * zx + .25)
         {
             iterations = MaxIterations;
         }
-
-        do
+        else if((x + 1)*(x + 1) + y * y < 1 / 16)
         {
-            zy = 2 * zx * zy + y;
-            zx = zx2 - zy2 + x;
-            zx2 = zx * zx;
-            zy2 = zy * zy;
-        } while (iterations++ < MaxIterations && zx2 + zy2 < 4);
+            iterations = MaxIterations;
+        }
+        else
+        {
+            do
+            {
+                zy = 2 * zx * zy + y;
+                zx = zx2 - zy2 + x;
+                zx2 = zx * zx;
+                zy2 = zy * zy;
+            } while (iterations++ < MaxIterations && zx2 + zy2 < 4);
+        }
+
+        
 
         if (iterations == MaxIterations || iterations == 0)
         {
@@ -87,17 +96,16 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
     }
 }
 
-#include "../benchmark.h"
 int main(int argc, char *argv[])
 {
-    cudaFree(0);
+    //cudaFree(0);
 
     benchmark<measure_in::ms, 25>([&]()
     {
         const auto height = 4096, width = 4096, threads = 512, blocks = 8;
         const auto scale = 1.0 / (width / 4);
 
-        std::vector<rgb> image(height * width, { 0, 0, 0 });
+        std::vector<rgb> image(height * width);
 
         cuda::launchInfo launchInfo{ blocks, threads, width, height };
         cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
