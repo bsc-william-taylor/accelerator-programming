@@ -87,18 +87,25 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
     }
 }
 
+#include "../benchmark.h"
 int main(int argc, char *argv[])
 {
-    const auto height = 4096, width = 4096, threads = 512, blocks = 8;
-    const auto scale = 1.0 / (width / 4);
+    cudaFree(0);
 
-    std::vector<rgb> image(height * width, {0, 0, 0});
-  
-    cuda::launchInfo launchInfo { blocks, threads, width, height };
-    cuda::memory<rgb*> imagePointer { image.data(), image.size() * sizeof(rgb) };
-    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
-    cuda::move(imagePointer, image.data());
- 
-    writeOutput("output.ppm", image.data(), width, height);
+    benchmark<measure_in::ms, 25>([&]()
+    {
+        const auto height = 4096, width = 4096, threads = 512, blocks = 8;
+        const auto scale = 1.0 / (width / 4);
+
+        std::vector<rgb> image(height * width, { 0, 0, 0 });
+
+        cuda::launchInfo launchInfo{ blocks, threads, width, height };
+        cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
+        cuda::start(mandelbrot, launchInfo, imagePointer, scale);   
+        cuda::move(imagePointer, image.data());
+
+        writeOutput("output.ppm", image.data(), width, height);
+    });
+    
     return 0;
 }
