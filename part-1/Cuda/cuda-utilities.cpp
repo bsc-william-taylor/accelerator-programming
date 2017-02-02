@@ -14,6 +14,8 @@ void repeat(unsigned int count, T functor)
     }
 }
 
+#include <iostream>
+
 cudaError cuda::errorCheck(cudaErrorHandler functor)
 {
     auto errorCode = cudaGetLastError();
