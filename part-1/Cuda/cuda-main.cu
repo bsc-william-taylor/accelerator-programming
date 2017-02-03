@@ -1,6 +1,6 @@
 #include "cuda-utilities.h"
-#inlude "benchmark.h"
 #include <cstdio>
+#include <cuda_runtime.h>
 
 struct rgb
 {
@@ -45,8 +45,8 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
         auto y = (i / info.width - info.height / 2) * scale + CenterY;
         auto zx = hypot(x - 0.25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
 
-        uchar iterations = 0;
-
+        uchar iterations = 255 * (x < zx - 2 * zx * zx + 0.2);
+        
         if (x < zx - 2 * zx * zx + .25)
         {
             iterations = MaxIterations;
@@ -65,8 +65,6 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
                 zy2 = zy * zy;
             } while (iterations++ < MaxIterations && zx2 + zy2 < 4);
         }
-
-        
 
         if (iterations == MaxIterations || iterations == 0)
         {
@@ -96,13 +94,13 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
     }
 }
 
+#include "../benchmark.h"
+
 int main(int argc, char *argv[])
 {
-    //cudaFree(0);
-
-    benchmark<measure_in::ms, 25>([&]()
+    benchmark<measure_in::ms, 10>([&]()
     {
-        const auto height = 4096, width = 4096, threads = 512, blocks = 8;
+        const auto height = 4096, width = 4096, threads = 64, blocks = 64;
         const auto scale = 1.0 / (width / 4);
 
         std::vector<rgb> image(height * width);
