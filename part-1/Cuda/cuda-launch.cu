@@ -14,5 +14,5 @@ cuda::launchInfo cuda::optimumLaunch(void* kernel, int dataLength)
     
     const auto gridSize = (dataLength + blockSize - 1) / blockSize;
 
-    return { gridSize, blockSize, (int)sqrt(dataLength) };
+    return { gridSize, blockSize, static_cast<int>(sqrt(dataLength)) };
 }

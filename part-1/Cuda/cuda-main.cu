@@ -1,5 +1,6 @@
 #include "cuda-utilities.h"
 #include <cstdio>
+#include "../benchmark.h"
 
 struct rgb
 {
@@ -8,7 +9,6 @@ struct rgb
 
 using uchar = unsigned char;
 using uint = unsigned int;
-using std::vector;
 
 __constant__ const uchar MaxIterations = std::numeric_limits<uchar>::max();
 __constant__ const uint MappingsLength = 16;
@@ -96,14 +96,14 @@ int main(int argc, char *argv[])
 {
     const auto height = 4096, width = 4096;
     const auto scale = 1.0 / (width / 4.0);
-    
-    vector<rgb> image(height * width);
+
+    std::vector<rgb> image(height * width);
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
     cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
     cuda::start(mandelbrot, launchInfo, imagePointer, scale);
     cuda::move(imagePointer, image.data());
 
-    writeOutput("output.ppm", image.data(), width, height);
+    writeOutput("output.ppm", image.data(), width, height);   
     return 0;
 }
