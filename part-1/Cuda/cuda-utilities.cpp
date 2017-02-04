@@ -8,19 +8,17 @@ using std::vector;
 template<typename T>
 void repeat(unsigned int count, T functor)
 {
-    for(auto i{0u}; i < count; ++i)
+    for (auto i{ 0u }; i < count; ++i)
     {
         functor(i);
     }
 }
 
-#include <iostream>
-
 cudaError cuda::errorCheck(cudaErrorHandler functor)
 {
     auto errorCode = cudaGetLastError();
 
-    if(errorCode != 0)
+    if (errorCode != 0)
     {
         functor(errorCode, cudaGetErrorString(errorCode));
     }
@@ -31,14 +29,14 @@ cudaError cuda::errorCheck(cudaErrorHandler functor)
 cudaDeviceProp cuda::findDevice(cudaDeviceFilter functor)
 {
     int count;
-    cudaGetDeviceCount(&count); 
+    cudaGetDeviceCount(&count);
 
-    if(count <= 0)
+    if (count <= 0)
     {
-        throw std::runtime_error("CUDA Device Not Available");
+        throw std::runtime_error("CUDA Device Not Available (cudaGetDeviceCount <= 0)");
     }
 
     vector<cudaDeviceProp> props(count);
-    repeat(count, [&](int i){ cudaGetDeviceProperties(&props[i], i);});
+    repeat(count, [&](int i) { cudaGetDeviceProperties(&props[i], i); });
     return functor(props);
 }

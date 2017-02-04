@@ -4,8 +4,10 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+
 #include <functional>
 #include <iostream>
+#include <fstream>
 #include <vector>
 
 #include "cuda-launch.h"
@@ -23,24 +25,36 @@ namespace cuda
     template<unsigned times, typename Functor, typename... Args>
     void benchmark(Functor&& method, Args&&... args)
     {
+        std::ofstream csvFile("kernel.csv");
+        csvFile << "Kernel Results,  \n";
+        csvFile << "ID, Time (ms)\n";
+
         cudaEvent_t start, stop;
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
 
-        for(auto i = 0u; i < times; ++i)
+        auto milliseconds = 0.0f;
+        auto total = 0.0;
+        
+        for(auto i = 1u; i <= times; ++i)
         {
             cudaEventRecord(start);
             method(std::forward(args)...);
             cudaEventRecord(stop);
             cudaEventSynchronize(stop);
-
-            float milliseconds = 0;
             cudaEventElapsedTime(&milliseconds, start, stop);
-            std::cout << "ms: "  << milliseconds << std::endl;
+           
+            total += milliseconds;
+
+            csvFile << i << "," << milliseconds << "\n";
         }
          
         cudaEventDestroy(start);
         cudaEventDestroy(stop);
+
+        csvFile << "Total (ms), Average (ms) \n";
+        csvFile << total << "," << total / times;
+        csvFile.close();
     }
 
     template<typename T>
