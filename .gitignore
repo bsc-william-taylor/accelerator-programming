@@ -5,6 +5,7 @@
 *.obj
 *.pdb
 
+*.ppm
 x86
 
 # Precompiled Headers
