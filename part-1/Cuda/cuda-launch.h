@@ -19,7 +19,7 @@ namespace cuda
     template<typename K, typename... Args>
     cudaError_t start(K kernel, launchInfo& launch, Args&&... args)
     {
-        kernel << <launch.blocks, launch.threads >> >(launch, std::forward<Args>(args)...);
+        kernel<<<launch.blocks, launch.threads>>>(launch, std::forward<Args>(args)...);
         return cudaDeviceSynchronize();
     }
 

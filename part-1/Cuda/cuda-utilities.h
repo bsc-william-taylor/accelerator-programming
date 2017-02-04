@@ -33,16 +33,15 @@ namespace cuda
         cudaEventCreate(&stop);
 
         auto total = 0.0;
-
+        auto milliseconds = 0.0f;
         for(auto i = 1u; i <= times; ++i)
         {
             cudaEventRecord(start);
             method(std::forward(args)...);
             cudaEventRecord(stop);
             cudaEventSynchronize(stop);
-
-            float milliseconds = 0;
             cudaEventElapsedTime(&milliseconds, start, stop);
+           
             total += milliseconds;
 
             csvFile << i << "," << milliseconds << "\n";

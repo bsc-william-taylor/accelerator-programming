@@ -45,7 +45,7 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
         auto y = (i / info.width - info.height / 2) * scale + CenterY;
         auto zx = hypot(x - 0.25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
 
-        uchar iterations = 255 * (x < zx - 2 * zx * zx + 0.2);
+        uchar iterations = 0;
         
         if (x < zx - 2 * zx * zx + .25)
         {
@@ -94,24 +94,18 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
     }
 }
 
-#include "../benchmark.h"
-
 int main(int argc, char *argv[])
 {
-    benchmark<measure_in::ms, 1>([&]()
-    {
-        const auto height = 256, width = 256, threads = 64, blocks = 64;
-        const auto scale = 1.0 / (width / 4);
+    const auto height = 256, width = 256, threads = 64, blocks = 64;
+    const auto scale = 1.0 / (width / 4);
 
-        std::vector<rgb> image(height * width);
+    std::vector<rgb> image(height * width);
 
-        cuda::launchInfo launchInfo{ blocks, threads, width, height };
-        cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
-        cuda::benchmark<10>([&](){  start(mandelbrot, launchInfo, imagePointer, scale); });
-        cuda::move(imagePointer, image.data());
+    cuda::launchInfo launchInfo{ blocks, threads, width, height };
+    cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
+    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
+    cuda::move(imagePointer, image.data());
 
-        writeOutput("output.ppm", image.data(), width, height);
-    });
-    
+    writeOutput("output.ppm", image.data(), width, height);
     return 0;
 }
