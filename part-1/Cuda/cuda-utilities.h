@@ -4,6 +4,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+
 #include <functional>
 #include <iostream>
 #include <fstream>
@@ -32,8 +33,9 @@ namespace cuda
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
 
-        auto total = 0.0;
         auto milliseconds = 0.0f;
+        auto total = 0.0;
+        
         for(auto i = 1u; i <= times; ++i)
         {
             cudaEventRecord(start);

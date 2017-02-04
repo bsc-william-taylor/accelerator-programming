@@ -1,6 +1,5 @@
 #include "cuda-utilities.h"
 #include <cstdio>
-#include <cuda_runtime.h>
 
 struct rgb
 {
@@ -9,6 +8,7 @@ struct rgb
 
 using uchar = unsigned char;
 using uint = unsigned int;
+using std::vector;
 
 __constant__ const uchar MaxIterations = std::numeric_limits<uchar>::max();
 __constant__ const uint MappingsLength = 16;
@@ -36,44 +36,42 @@ __constant__ const rgb Mappings[MappingsLength]
 
 __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 {
-    auto workload = cuda::allocateWork(info, blockIdx.x, threadIdx.x);
-    auto px = image + workload.offset;
+    const auto i = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
+    const auto x = (i % info.size - info.size / 2) * scale + CenterX;
+    const auto y = (i / info.size - info.size / 2) * scale + CenterY;
 
-    for(auto i = workload.offset; i < workload.size; ++i, ++px)
+    uchar iter = 0;
+
+    auto zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+    auto zx = hypot(x - .25, y);
+
+    if (x < zx - 2 * zx * zx + .25) 
     {
-        auto x = (i % info.width - info.width / 2) * scale + CenterX;
-        auto y = (i / info.width - info.height / 2) * scale + CenterY;
-        auto zx = hypot(x - 0.25, y), zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+        iter = MaxIterations;
+    }
+    else if ((x + 1)*(x + 1) + y * y < 1 / 16)
+    {
+        iter = MaxIterations;
+    }
+    else
+    {
+        do 
+        {
+            zy = 2 * zx * zy + y;
+            zx = zx2 - zy2 + x;
+            zx2 = zx * zx;
+            zy2 = zy * zy;
+        } while (iter++ < 255 && zx2 + zy2 < 4);
+    }
 
-        uchar iterations = 0;
-        
-        if (x < zx - 2 * zx * zx + .25)
-        {
-            iterations = MaxIterations;
-        }
-        else if((x + 1)*(x + 1) + y * y < 1 / 16)
-        {
-            iterations = MaxIterations;
-        }
-        else
-        {
-            do
-            {
-                zy = 2 * zx * zy + y;
-                zx = zx2 - zy2 + x;
-                zx2 = zx * zx;
-                zy2 = zy * zy;
-            } while (iterations++ < MaxIterations && zx2 + zy2 < 4);
-        }
 
-        if (iterations == MaxIterations || iterations == 0)
-        {
-            *px = { 0 };
-        }
-        else
-        {
-            *px = Mappings[iterations % MappingsLength];
-        }
+    if (iter == MaxIterations || iter == 0)
+    {
+        image[i] = { 0 };
+    }
+    else
+    {
+        image[i] = Mappings[iter % MappingsLength];
     }
 }
 
@@ -96,12 +94,12 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
 
 int main(int argc, char *argv[])
 {
-    const auto height = 256, width = 256, threads = 64, blocks = 64;
-    const auto scale = 1.0 / (width / 4);
+    const auto height = 4096, width = 4096;
+    const auto scale = 1.0 / (width / 4.0);
+    
+    vector<rgb> image(height * width);
 
-    std::vector<rgb> image(height * width);
-
-    cuda::launchInfo launchInfo{ blocks, threads, width, height };
+    cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
     cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
     cuda::start(mandelbrot, launchInfo, imagePointer, scale);
     cuda::move(imagePointer, image.data());
