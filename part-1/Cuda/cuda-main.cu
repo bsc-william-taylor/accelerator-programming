@@ -98,16 +98,16 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
 
 int main(int argc, char *argv[])
 {
-    benchmark<measure_in::ms, 10>([&]()
+    benchmark<measure_in::ms, 1>([&]()
     {
-        const auto height = 4096, width = 4096, threads = 64, blocks = 64;
+        const auto height = 256, width = 256, threads = 64, blocks = 64;
         const auto scale = 1.0 / (width / 4);
 
         std::vector<rgb> image(height * width);
 
         cuda::launchInfo launchInfo{ blocks, threads, width, height };
         cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
-        cuda::start(mandelbrot, launchInfo, imagePointer, scale);   
+        cuda::benchmark<10>([&](){  start(mandelbrot, launchInfo, imagePointer, scale); });
         cuda::move(imagePointer, image.data());
 
         writeOutput("output.ppm", image.data(), width, height);

@@ -1,4 +1,4 @@
-
+\
 #pragma once
 
 #include <fstream>
@@ -18,7 +18,7 @@ void benchmark(Functor&& method, Args&&... args)
 
     std::ofstream csvFile("benchmark.csv");
     csvFile << "Benchmark Results,  \n";
-    csvFile << "ID, Time" << typeString << ", \n";
+    csvFile << "ID, Time" << typeString << "\n";
     
     for (auto i = 1u; i <= times; ++i) 
     {
