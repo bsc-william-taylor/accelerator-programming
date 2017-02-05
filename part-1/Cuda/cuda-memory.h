@@ -12,6 +12,7 @@ namespace cuda
         size_t sz;
     public:
         memory(T src, size_t bytes);
+        memory(size_t bytes, int value);
         memory(const memory& copy) = delete;
         memory(memory&& copy) = delete;
 
@@ -21,6 +22,7 @@ namespace cuda
 
         size_t size();
 
+        void memset(int value);
         void transfer(T dest);
         void assign(T src);
         void allocate();
@@ -36,6 +38,14 @@ namespace cuda
     }
 
     template<typename T>
+    memory<T>::memory(size_t bytes, int value)
+        : pointer(nullptr), sz(bytes)
+    {
+        allocate();
+        memset(value);
+    }
+
+    template<typename T>
     memory<T>::~memory()
     {
         release();
@@ -47,6 +57,15 @@ namespace cuda
         if (pointer == nullptr)
         {
             cudaMalloc(&pointer, size());
+        }
+    }
+
+    template<typename T>
+    void memory<T>::memset(int value)
+    {
+        if(pointer != nullptr)
+        {
+            cudaMemset(pointer, value, size());
         }
     }
 

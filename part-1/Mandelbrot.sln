@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cuda", "Cuda\Cuda.vcxproj", "{DC7FDBB1-2223-40F3-A93C-F400414AB769}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mandelbrot-Cuda", "Cuda\Cuda.vcxproj", "{DC7FDBB1-2223-40F3-A93C-F400414AB769}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cpu", "Cpu\Cpu.vcxproj", "{A45F4969-CE42-4D0B-91AD-A87B6D63AC31}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mandelbrot-Cpu", "Cpu\Cpu.vcxproj", "{A45F4969-CE42-4D0B-91AD-A87B6D63AC31}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mandelbrot-Test", "Test\Test.vcxproj", "{94514BC9-3DE4-46DF-AF04-A3229564DA56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,14 @@ Global
 		{A45F4969-CE42-4D0B-91AD-A87B6D63AC31}.Release|x64.Build.0 = Release|x64
 		{A45F4969-CE42-4D0B-91AD-A87B6D63AC31}.Release|x86.ActiveCfg = Release|Win32
 		{A45F4969-CE42-4D0B-91AD-A87B6D63AC31}.Release|x86.Build.0 = Release|Win32
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Debug|x64.ActiveCfg = Debug|x64
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Debug|x64.Build.0 = Debug|x64
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Debug|x86.ActiveCfg = Debug|Win32
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Debug|x86.Build.0 = Debug|Win32
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Release|x64.ActiveCfg = Release|x64
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Release|x64.Build.0 = Release|x64
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Release|x86.ActiveCfg = Release|Win32
+		{94514BC9-3DE4-46DF-AF04-A3229564DA56}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

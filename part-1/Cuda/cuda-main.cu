@@ -12,8 +12,7 @@ using uint = unsigned int;
 
 __constant__ const uchar MaxIterations = std::numeric_limits<uchar>::max();
 __constant__ const uint MappingsLength = 16;
-__constant__ const double CenterX = -0.6;
-__constant__ const double CenterY = 0.0;
+__constant__ const double CenterX = -0.6, CenterY = 0.0;
 __constant__ const rgb Mappings[MappingsLength]
 {
     { 66,  30,   15 },
@@ -45,17 +44,13 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
     auto zy = 0.0, zx2 = 0.0, zy2 = 0.0;
     auto zx = hypot(x - .25, y);
 
-    if (x < zx - 2 * zx * zx + .25) 
-    {
-        iter = MaxIterations;
-    }
-    else if ((x + 1)*(x + 1) + y * y < 1 / 16)
+    if (x < zx - 2 * zx * zx + 0.25 || (x + 1)*(x + 1) + y * y < 1 / 16)
     {
         iter = MaxIterations;
     }
     else
     {
-        do 
+        do
         {
             zy = 2 * zx * zy + y;
             zx = zx2 - zy2 + x;
@@ -63,13 +58,9 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
             zy2 = zy * zy;
         } while (iter++ < 255 && zx2 + zy2 < 4);
     }
+    
 
-
-    if (iter == MaxIterations || iter == 0)
-    {
-        image[i] = { 0 };
-    }
-    else
+    if (iter != MaxIterations && iter != 0)
     {
         image[i] = Mappings[iter % MappingsLength];
     }
@@ -77,12 +68,12 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 
 void writeOutput(const std::string& filename, rgb* image, int width, int height)
 {
-    auto file = fopen(filename.c_str(), "w");
+    const auto file = fopen(filename.c_str(), "w");
         
     if(file != nullptr)
     {
         fprintf(file, "P6\n%d %d\n255\n", width, height);
-
+ 
         for (auto i = height - 1; i >= 0; --i) 
         {
             fwrite(image + i * width, 1, width * sizeof(rgb), file);
@@ -95,15 +86,15 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
 int main(int argc, char *argv[])
 {
     const auto height = 4096, width = 4096;
-    const auto scale = 1.0 / (width / 4.0);
+    const auto scale = 1.0 / (width / 4);
 
     std::vector<rgb> image(height * width);
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
-    cuda::memory<rgb*> imagePointer{ image.data(), image.size() * sizeof(rgb) };
+    cuda::memory<rgb*> imagePointer{ image.size() * sizeof(rgb), 0 };
     cuda::start(mandelbrot, launchInfo, imagePointer, scale);
     cuda::move(imagePointer, image.data());
 
-    writeOutput("output.ppm", image.data(), width, height);   
+    writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);
     return 0;
 }
