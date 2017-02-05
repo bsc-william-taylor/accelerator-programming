@@ -85,7 +85,8 @@ void writeOutput(const std::string& filename, rgb* image, int width, int height)
 
 int main(int argc, char *argv[])
 {
-    const auto height = 4096, width = 4096;
+    const auto height = argc > 1 ? atoi(argv[1]) : 4096;
+    const auto width = argc > 2 ? atoi(argv[2]) : 4096;
     const auto scale = 1.0 / (width / 4);
 
     std::vector<rgb> image(height * width);
