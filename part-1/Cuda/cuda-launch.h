@@ -9,7 +9,9 @@ namespace cuda
 {
     struct launchInfo
     {
-        int blocks, threads, size;
+        dim3 blocks;
+        dim3 threads;
+        int size;
     };
 
     launchInfo optimumLaunch(void* kernel, int datasetSize);
