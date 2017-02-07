@@ -1,6 +1,5 @@
 #include "cuda-utilities.h"
 #include <cstdio>
-#include "../benchmark.h"
 
 struct rgb
 {
@@ -11,8 +10,8 @@ using uchar = unsigned char;
 using uint = unsigned int;
 
 __constant__ const uchar MaxIterations = std::numeric_limits<uchar>::max();
-__constant__ const uint MappingsLength = 16;
 __constant__ const double CenterX = -0.6, CenterY = 0.0;
+__constant__ const uint MappingsLength = 16;
 __constant__ const rgb Mappings[MappingsLength]
 {
     { 66,  30,   15 },
@@ -35,51 +34,56 @@ __constant__ const rgb Mappings[MappingsLength]
 
 __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 {
-    const auto i = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
-    const auto x = (i % info.size - info.size / 2) * scale + CenterX;
-    const auto y = (i / info.size - info.size / 2) * scale + CenterY;
+    const auto j = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
+    const auto i = static_cast<int>(threadIdx.y + blockIdx.y * blockDim.y);
 
-    uchar iter = 0;
+    if (i >= info.size || j >= info.size)
+    {
+        return;
+    }
 
-    auto zy = 0.0, zx2 = 0.0, zy2 = 0.0;
-    auto zx = hypot(x - .25, y);
+    const auto x = (j - info.size / 2) * scale + CenterX;
+    const auto y = (i - info.size / 2) * scale + CenterY;
 
+    auto zx = hypot(x - 0.25, y);
+    
     if (x < zx - 2 * zx * zx + 0.25 || (x + 1)*(x + 1) + y * y < 1 / 16)
     {
-        iter = MaxIterations;
+        return;
     }
-    else
+
+    uchar iter = 0;
+    auto zy = 0.0, zx2 = 0.0, zy2 = 0.0;
+    zx = 0.0;
+
+    do
     {
-        do
-        {
-            zy = 2 * zx * zy + y;
-            zx = zx2 - zy2 + x;
-            zx2 = zx * zx;
-            zy2 = zy * zy;
-        } while (iter++ < 255 && zx2 + zy2 < 4);
-    }
-    
+        zy = 2.0 * zx * zy + y;
+        zx = zx2 - zy2 + x;
+        zx2 = zx * zx;
+        zy2 = zy * zy;
+    } while (iter++ < 255 && zx2 + zy2 < 4);
 
     if (iter != MaxIterations && iter != 0)
     {
-        image[i] = Mappings[iter % MappingsLength];
+        image[(j + info.size * i)] = Mappings[iter % MappingsLength];   
     }
 }
 
 void writeOutput(const std::string& filename, rgb* image, int width, int height)
-{
-    const auto file = fopen(filename.c_str(), "w");
-        
-    if(file != nullptr)
+{ 
+    const auto fp = fopen("gpu-mandelbrot.ppm", "w");
+
+    if(fp)
     {
-        fprintf(file, "P6\n%d %d\n255\n", width, height);
- 
-        for (auto i = height - 1; i >= 0; --i) 
+        fprintf(fp, "P6\n%d %d\n255\n", width, height);
+
+        for (auto i = height - 1; i >= 0; i--)
         {
-            fwrite(image + i * width, 1, width * sizeof(rgb), file);
+            fwrite(image + i * width, 1, width * sizeof(rgb), fp);
         }
 
-        fclose(file);
+        fclose(fp);
     }
 }
 
@@ -97,5 +101,5 @@ int main(int argc, char *argv[])
     cuda::move(imagePointer, image.data());
 
     writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);
-    return 0;
+    return std::cin.get();
 }

@@ -1,13 +1,10 @@
-
-#include "../benchmark.h"
-#include <iostream>
-#include <cstdlib>
 #include <cstdio>
-#include <limits>
+#include <cstdlib>
 #include <cmath>
+#include <limits>
 
 using uchar = unsigned char;
-const double cx = -.6, cy = 0;
+const double cx = -0.6, cy = 0;
 const uchar max_iter = std::numeric_limits<uchar>::max();
 
 struct rgb_t { unsigned char r, g, b; };
@@ -17,6 +14,17 @@ rgb_t  *img_data;
 
 void screen_dump(const int width, const int height)
 {
+    #ifdef MIRROR_TEST
+    int same = 0;
+
+    for (int i = 0; i < height; i++)
+    {
+        same += memcmp(row_ptrs[i], row_ptrs[height - 1 - i], sizeof(rgb_t) * width) == 0;
+    }
+
+    printf("Compares Fail %d \n", same);
+    #endif
+
     FILE *fp = fopen("cpu-mandelbrot.ppm", "w");
     fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (int i = height - 1; i >= 0; i--)
@@ -58,6 +66,7 @@ void calc_mandel(const int width, const int height, const double scale)
 
         const double y = (i - height / 2) * scale + cy;
 
+
         rgb_t *px = row_ptrs[i];
         for (int j = 0; j < width; j++, px++) {
 
@@ -74,7 +83,7 @@ void calc_mandel(const int width, const int height, const double scale)
                 zy = 2 * zx * zy + y;
                 zx = zx2 - zy2 + x;
                 zx2 = zx * zx;
-                zy2 = zy * zy;
+                zy2 = zy * zy;              
             } while (iter++ < max_iter && zx2 + zy2 < 4);
 
             px->r = iter;

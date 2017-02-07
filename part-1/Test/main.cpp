@@ -29,6 +29,21 @@ FilePPM readPortablePixmap(std::ifstream& fs)
     return ppm;
 }
 
+void findPixelErrors(const FilePPM& gpuFile, const FilePPM& cpuFile)
+{
+    for (auto i = 0; i < gpuFile.pixels.size(); i++)
+    {
+        auto& gpuPixels = gpuFile.pixels;
+        auto& cpuPixels = cpuFile.pixels;
+
+        if (gpuPixels[i] != cpuPixels[i])
+        {
+            std::cout << "(index) -> " << i / 3 << " ";
+            i += 2;
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
     std::ifstream gpuOutput(GpuOutLocation, std::ios::binary);
@@ -38,8 +53,9 @@ int main(int argc, char* argv[])
     {
         const auto gpuFile = readPortablePixmap(gpuOutput);
         const auto cpuFile = readPortablePixmap(cpuOutput);
-
-        const auto sameData = strcmp(cpuFile.pixels.data(), gpuFile.pixels.data()) == 0;
+        const auto size = cpuFile.width * cpuFile.height * 3;
+        
+        const auto sameData = memcmp(cpuFile.pixels.data(), gpuFile.pixels.data(), size) == 0;
         const auto sameVersion = cpuFile.version == gpuFile.version;
         const auto sameHeight = cpuFile.height == gpuFile.height;
         const auto sameWidth = cpuFile.width == gpuFile.width;
@@ -50,10 +66,17 @@ int main(int argc, char* argv[])
         ss << "Same Width?   " << (sameWidth ? "True" : "False") << std::endl;
         ss << "Same Version? " << (sameVersion ? "True" : "False");
 
+        if (!sameData)
+        {
+            findPixelErrors(gpuFile, cpuFile);
+        }
+
         std::cout << ss.str() << std::endl;
     }
     else
     {
         std::cout << "Error: Could not find files" << std::endl;
     }
+
+    return 0;
 }

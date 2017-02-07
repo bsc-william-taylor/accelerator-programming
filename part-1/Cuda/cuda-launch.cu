@@ -2,6 +2,19 @@
 #include "cuda-launch.h"
 #include <stdexcept>
 
+int P2(int v)
+{
+    // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    --v;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    ++v;
+    return v;
+}
+
 cuda::launchInfo cuda::optimumLaunch(void* kernel, int dataLength)
 {
     auto minGridSize = 0, blockSize = 0;
@@ -13,6 +26,8 @@ cuda::launchInfo cuda::optimumLaunch(void* kernel, int dataLength)
     }
     
     const auto gridSize = (dataLength + blockSize - 1) / blockSize;
-
-    return { gridSize, blockSize, static_cast<int>(sqrt(dataLength)) };
+    const auto thread = P2(sqrt(blockSize));
+    const auto block = P2(sqrt(gridSize));
+ 
+    return { dim3(block, block), dim3(thread, thread), static_cast<int>(sqrt(dataLength)) };
 }
