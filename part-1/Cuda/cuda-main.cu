@@ -66,7 +66,7 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 
     if (iter != MaxIterations && iter != 0)
     {
-        image[(j + info.size * i)] = Mappings[iter % MappingsLength];   
+        image[j + info.size * i] = Mappings[iter % MappingsLength];   
     }
 }
 
@@ -97,9 +97,13 @@ int main(int argc, char *argv[])
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
     cuda::memory<rgb*> imagePointer{ image.size() * sizeof(rgb), 0 };
-    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
+    cuda::benchmark<10>([&]()
+    {
+        cuda::start(mandelbrot, launchInfo, imagePointer, scale);
+    });
+
     cuda::move(imagePointer, image.data());
 
     writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);
-    return std::cin.get();
+    return 0;
 }
