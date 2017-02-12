@@ -30,4 +30,5 @@ cuda::launchInfo cuda::optimumLaunch(void* kernel, int dataLength)
     const auto block = P2(sqrt(gridSize));
  
     return { dim3(block, block), dim3(thread, thread), static_cast<int>(sqrt(dataLength)) };
+
 }
