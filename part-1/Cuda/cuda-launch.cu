@@ -2,9 +2,9 @@
 #include "cuda-launch.h"
 #include <stdexcept>
 
+// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 int P2(int v)
 {
-    // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     --v;
     v |= v >> 1;
     v |= v >> 2;

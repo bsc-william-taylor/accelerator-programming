@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "Cuda/csv-file.h"
 #include <fstream>
 #include <ctime>
 

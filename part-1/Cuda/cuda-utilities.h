@@ -10,6 +10,7 @@
 #include <fstream>
 #include <vector>
 
+#include "../csv-file.h"
 #include "cuda-launch.h"
 #include "cuda-memory.h"
 
@@ -25,9 +26,8 @@ namespace cuda
     template<unsigned times, typename Functor, typename... Args>
     void benchmark(Functor&& method, Args&&... args)
     {
-        std::ofstream csvFile("kernel.csv");
-        csvFile << "Kernel Results,  \n";
-        csvFile << "ID, Time (ms)\n";
+        fs::csv<2> table("kernel.csv", "Kernel Results");
+        table.append_row("ID, Time (ms)");
 
         cudaEvent_t start, stop;
         cudaEventCreate(&start);
@@ -44,17 +44,15 @@ namespace cuda
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&milliseconds, start, stop);
            
+            table.append(i, ",", milliseconds, "\n");
             total += milliseconds;
-
-            csvFile << i << "," << milliseconds << "\n";
         }
          
         cudaEventDestroy(start);
         cudaEventDestroy(stop);
 
-        csvFile << "Total (ms), Average (ms) \n";
-        csvFile << total << "," << total / times;
-        csvFile.close();
+        table.append_row("Total (ms), Average (ms)");
+        table.append("total", ",", total / times);
     }
 
     template<typename T>
