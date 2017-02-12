@@ -77,15 +77,19 @@ void writeOutput(const std::string& filename, void* image, int width, int height
 
 int main(int argc, char *argv[])
 {
-    const auto height = argc > 1 ? atoi(argv[1]) : 4096;
-    const auto width = argc > 2 ? atoi(argv[2]) : 4096;
+    const auto height = argc > 1 ? atoi(argv[1]) : 4096*4;
+    const auto width = argc > 2 ? atoi(argv[2]) : 4096*4;
     const auto scale = 1.0 / (width / 4);
 
     std::vector<rgb_t> image(height * width);
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
     cuda::memory<rgb_t*> imagePointer{ image.size() * sizeof(rgb_t), 0 };
-    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
+    cuda::benchmark<10>([&]()
+    {
+        start(mandelbrot, launchInfo, imagePointer, scale);
+    }) ;
+
     cuda::move(imagePointer, image.data());
 
     writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);
