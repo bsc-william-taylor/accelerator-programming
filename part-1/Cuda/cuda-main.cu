@@ -1,17 +1,13 @@
 #include "cuda-utilities.h"
-#include <cstdio>
 
 struct rgb
 {
     unsigned char r, g, b;
 };
 
-using uchar = unsigned char;
-using uint = unsigned int;
-
-__constant__ const uchar MaxIterations = std::numeric_limits<uchar>::max();
+__constant__ const uint8_t MaxIterations = std::numeric_limits<uint8_t>::max();
 __constant__ const double CenterX = -0.6, CenterY = 0.0;
-__constant__ const uint MappingsLength = 16;
+__constant__ const uint32_t MappingsLength = 16;
 __constant__ const rgb Mappings[MappingsLength]
 {
     { 66,  30,   15 },
@@ -52,7 +48,7 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
         return;
     }
 
-    uchar iter = 0;
+    uint8_t iter = 0;
     auto zy = 0.0, zx2 = 0.0, zy2 = 0.0;
     zx = 0.0;
 
@@ -66,25 +62,17 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb* image, double scale)
 
     if (iter != MaxIterations && iter != 0)
     {
-        image[j + info.size * i] = Mappings[iter % MappingsLength];   
+        const auto flippedY = info.size - 1 - i;
+        image[j + info.size * flippedY] = Mappings[iter % MappingsLength];
     }
 }
 
-void writeOutput(const std::string& filename, rgb* image, int width, int height)
+void writeOutput(const std::string& filename, void* image, int width, int height)
 { 
-    const auto fp = fopen("gpu-mandelbrot.ppm", "w");
-
-    if(fp)
-    {
-        fprintf(fp, "P6\n%d %d\n255\n", width, height);
-
-        for (auto i = height - 1; i >= 0; i--)
-        {
-            fwrite(image + i * width, 1, width * sizeof(rgb), fp);
-        }
-
-        fclose(fp);
-    }
+    std::ofstream file("gpu-mandelbrot.ppm");
+    file << "P6\n" << width << " " << height << "\n255\n"; 
+    file.write(static_cast<char*>(image), height*width*sizeof(rgb));
+    file.close();
 }
 
 int main(int argc, char *argv[])
@@ -97,11 +85,7 @@ int main(int argc, char *argv[])
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
     cuda::memory<rgb*> imagePointer{ image.size() * sizeof(rgb), 0 };
-    cuda::benchmark<10>([&]()
-    {
-        cuda::start(mandelbrot, launchInfo, imagePointer, scale);
-    });
-
+    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
     cuda::move(imagePointer, image.data());
 
     writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);
