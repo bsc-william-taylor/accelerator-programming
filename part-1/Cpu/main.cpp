@@ -14,17 +14,6 @@ rgb_t  *img_data;
 
 void screen_dump(const int width, const int height)
 {
-    #ifdef MIRROR_TEST
-    int same = 0;
-
-    for (int i = 0; i < height; i++)
-    {
-        same += memcmp(row_ptrs[i], row_ptrs[height - 1 - i], sizeof(rgb_t) * width) == 0;
-    }
-
-    printf("Compares Fail %d \n", same);
-    #endif
-
     FILE *fp = fopen("cpu-mandelbrot.ppm", "w");
     fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (int i = height - 1; i >= 0; i--)

@@ -20,7 +20,7 @@ namespace cuda
 
         operator T();
 
-        const size_t size() const;
+        size_t size() const;
 
         void memset(int value);
         void transfer(T dest);
@@ -104,7 +104,7 @@ namespace cuda
     }
 
     template<typename T>
-    const size_t memory<T>::size() const
+    size_t memory<T>::size() const
     {
         return sz;
     }
