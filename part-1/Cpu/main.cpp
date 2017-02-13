@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 using uchar = unsigned char;
 const double cx = -0.6, cy = 0;
@@ -14,11 +15,21 @@ rgb_t  *img_data;
 
 void screen_dump(const int width, const int height)
 {
-    FILE *fp = fopen("cpu-mandelbrot.ppm", "w");
+    auto rowlen = sizeof(rgb_t) * width;
+    auto same = 0;
+
+    for (auto i = 0; i < height/2; i++)
+    {
+        const auto flippedY = height - 1 - i;
+        same += memcmp(row_ptrs[i], row_ptrs[flippedY], rowlen) == 0;
+    }
+
+    std::cout << same << std::endl;
+
+    FILE *fp = fopen("cpu-mandelbrot-1.ppm", "w");
     fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (int i = height - 1; i >= 0; i--)
         fwrite(row_ptrs[i], 1, width * sizeof(rgb_t), fp);
-    fclose(fp);
 }
 
 void alloc_2d(const int width, const int height)
@@ -91,8 +102,8 @@ void calc_mandel(const int width, const int height, const double scale)
 
 int main(int argc, char *argv[])
 {
-    const int width = (argc > 1) ? std::atoi(argv[1]) : 8192;
-    const int height = (argc > 2) ? std::atoi(argv[2]) : 8192;
+    const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
+    const int height = (argc > 2) ? std::atoi(argv[2]) : 4096;
     const double scale = 1. / (width / 4);
 
     alloc_2d(width, height);
