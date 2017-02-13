@@ -6,18 +6,18 @@ ppm::file cudaOutput("../Cuda/gpu-mandelbrot.ppm");
 ppm::file cpuOutput("../Cpu/cpu-mandelbrot.ppm");
 
 namespace Tests
-{		
+{
     using Microsoft::VisualStudio::CppUnitTestFramework::Assert;
 
-	TEST_CLASS(FileOutputTests)
-	{
-	public:    
-		TEST_METHOD(SameWidth)
-		{
-            Assert::IsTrue(cudaOutput.is_open() && cpuOutput .is_open(), L"Error Loading Files!");
+    TEST_CLASS(FileOutputTests)
+    {
+    public:
+        TEST_METHOD(SameWidth)
+        {
+            Assert::IsTrue(cudaOutput.is_open() && cpuOutput.is_open(), L"Error Loading Files!");
             auto equalWidth = cudaOutput.compare(ppm::section::Width, cpuOutput);
-			Assert::IsTrue(equalWidth, L"Error Images do not have the same width!");
-		}
+            Assert::IsTrue(equalWidth, L"Error Images do not have the same width!");
+        }
 
         TEST_METHOD(SameHeight)
         {
@@ -39,5 +39,5 @@ namespace Tests
             auto equalData = cudaOutput.compare(ppm::section::RawData, cpuOutput);
             Assert::IsTrue(equalData, L"Error Images do not have the same data!");
         }
-	};
+    };
 }

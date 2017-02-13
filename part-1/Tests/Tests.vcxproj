@@ -151,7 +151,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ppm.cpp" />
-    <ClCompile Include="tests.cpp" />
+    <ClCompile Include="ppm-tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ppm.h" />
