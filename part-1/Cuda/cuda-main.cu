@@ -80,9 +80,10 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb_t* image, double scale)
 void writeOutput(const std::string& filename, void* image, int width, int height)
 { 
     std::ofstream file("gpu-mandelbrot.ppm");
-    file << "P6\n" << width << " " << height << "\n255\n"; 
-    file.write(static_cast<char*>(image), height*width*sizeof(rgb_t));
-    file.close();
+    file << "P6" << std::endl << width;
+    file << " " << height << std::endl;
+    file << "255" << std::endl;
+    file.write(static_cast<char*>(image), height * width * sizeof(rgb_t));
 }
 
 int main(int argc, char *argv[])

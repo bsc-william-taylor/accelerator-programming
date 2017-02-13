@@ -2,7 +2,6 @@
 #include "cuda-launch.h"
 #include <stdexcept>
 
-// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 int powerTwo(int v)
 {
     --v;
