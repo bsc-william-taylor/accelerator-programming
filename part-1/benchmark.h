@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "Cuda/csv-file.h"
+#include "csv-file.h"
 #include <fstream>
 #include <ctime>
 
@@ -12,12 +12,12 @@ enum class measure_in
 };
 
 template<measure_in measure, unsigned times, typename Functor, typename... Args>
-void benchmark(Functor&& method, Args&&... args)
+void benchmark(const char* fn, Functor&& method, Args&&... args)
 {
     auto typeString = measure == measure_in::ms ? " (ms) " : " (secs) ";
     auto total = 0.0;
 
-    std::ofstream csvFile("benchmark.csv");
+    std::ofstream csvFile(fn);
     csvFile << "Benchmark Results,  \n";
     csvFile << "ID, Time" << typeString << "\n";
     
