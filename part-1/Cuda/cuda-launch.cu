@@ -12,6 +12,7 @@ cuda::launchInfo cuda::optimumLaunch(void* kernel, int width, int height, int da
         throw std::runtime_error("cudaOccupancyMaxPotentialBlockSize failed");
     }
 
+    // convert to nearest power of 2 & convert to 2D launch vector
     const auto blocks = static_cast<int>(pow(2, ceil(log(sqrt(blockSize)) / log(2))));
     const auto grid = static_cast<int>((sqrt(dataLength) + blocks - 1) / blocks);
 
