@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 
-namespace ppm 
+namespace ppm
 {
     enum class section
     {

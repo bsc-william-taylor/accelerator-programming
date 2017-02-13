@@ -30,18 +30,18 @@ bool ppm::file::compare(section field, file& right)
 {
     switch (field)
     {
-        case section::RawData: 
-            return memcmp(pixels.data(), right.pixels.data(), size()) == 0;
-        case section::MagicNum: 
-            return magicNumber == right.magicNumber;
-        case section::MaxColVal:
-             return maxValue == right.maxValue;
-        case section::Height: 
-            return height == right.height;
-        case section::Width: 
-            return width == right.width;
-        default: 
-            return "";
+    case section::RawData:
+        return memcmp(pixels.data(), right.pixels.data(), size()) == 0;
+    case section::MagicNum:
+        return magicNumber == right.magicNumber;
+    case section::MaxColVal:
+        return maxValue == right.maxValue;
+    case section::Height:
+        return height == right.height;
+    case section::Width:
+        return width == right.width;
+    default:
+        return "";
     }
 }
 
