@@ -2,32 +2,18 @@
 #include "cuda-launch.h"
 #include <stdexcept>
 
-int powerTwo(int v)
-{
-    --v;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    ++v;
-    return v;
-}
-
 cuda::launchInfo cuda::optimumLaunch(void* kernel, int width, int height, int dataLength)
 {
     auto minGridSize = 0, blockSize = 0;
-    auto cudaError = cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, dataLength);
-
+    auto cudaError = cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, kernel, 0, 0);
+  
     if(cudaError != 0)
     {
         throw std::runtime_error("cudaOccupancyMaxPotentialBlockSize failed");
     }
-    
-    const auto gridSize = (dataLength + blockSize - 1) / blockSize;
-    const auto thread = powerTwo(sqrt(blockSize));
-    const auto block = powerTwo(sqrt(gridSize));
- 
-    return { dim3(block, block), dim3(thread, thread), width, height };
 
+    const auto blocks = static_cast<int>(pow(2, ceil(log(sqrt(blockSize)) / log(2))));
+    const auto grid = static_cast<int>((sqrt(dataLength) + blocks - 1) / blocks);
+
+    return { dim3(grid, grid), dim3(blocks, blocks), width, height };
 }

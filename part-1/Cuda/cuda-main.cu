@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, image.size());
     cuda::memory<rgb_t*> imagePointer { image.size() * sizeof(rgb_t), 0 };
-    cuda::start(mandelbrot, launchInfo, imagePointer, scale); 
+    cuda::start(mandelbrot, launchInfo, imagePointer, scale);
     cuda::move(imagePointer, image.data());
 
     writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);

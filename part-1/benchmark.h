@@ -1,39 +1,63 @@
 
 #pragma once
 
-#include "csv-file.h"
 #include <fstream>
-#include <ctime>
+#include <chrono>
 
-enum class measure_in
+template<int C>
+class csv
 {
-    secs = 1000,
-    ms = 1
-};
-
-template<measure_in measure, unsigned times, typename Functor, typename... Args>
-void benchmark(const char* fn, Functor&& method, Args&&... args)
-{
-    auto typeString = measure == measure_in::ms ? " (ms) " : " (secs) ";
-    auto total = 0.0;
-
-    std::ofstream csvFile(fn);
-    csvFile << "Benchmark Results,  \n";
-    csvFile << "ID, Time" << typeString << "\n";
-    
-    for (auto i = 1u; i <= times; ++i) 
+    std::ofstream output;
+    int columnIndex;
+public:
+    explicit csv(const std::string& name, const std::string& title) :
+        output(name.c_str()), columnIndex(0)
     {
-        const auto start = clock();
-        method(std::forward<Args>(args)...);
-        const auto stop = clock();
-
-        auto time = (stop - start) / double(measure);
-        total += time;
-
-        csvFile << i << "," << time << "\n";
+        output << title.c_str();
+        for (auto i = 1u; i < C; ++i)
+            output << ",";
+        output << std::endl;
     }
 
-    csvFile << "Total" << typeString << ", Average" << typeString << "\n";
-    csvFile << total << "," << total / times;
-    csvFile.close();
+    template<typename V, typename... Args>
+    void append(V&& first, Args&&... args)
+    {
+        append(first);
+        append(args...);
+    }
+
+    template<typename V>
+    void append(V&& v)
+    {
+        output << v;
+    }
+
+    void append_row(const std::string& row)
+    {
+        output << row.c_str() << std::endl;
+    }
+};
+
+
+template<unsigned times, typename Functor, typename... Args>
+void benchmark(Functor&& method, Args&&... args)
+{
+    csv<2> table("benchmark.h", "Benchmark Results");
+    table.append_row("ID, Time (ms)");
+    
+    auto total = 0.0, millseconds = 0.0;
+ 
+    for (auto i = 1u; i <= times; ++i) 
+    {
+        const auto start = std::chrono::steady_clock::now();
+        method(std::forward<Args>(args)...);
+        const auto stop = std::chrono::steady_clock::now();
+        millseconds = (stop - start).count();
+
+        table.append(i, ",", millseconds, "\n");
+        total += millseconds;
+    }
+
+    table.append_row("Total (ms), Average (ms) \n");
+    table.append(total, ",", total / times);
 }
