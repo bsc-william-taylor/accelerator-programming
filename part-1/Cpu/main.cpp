@@ -26,7 +26,7 @@ void screen_dump(const int width, const int height)
 
     std::cout << same << std::endl;
 
-    FILE *fp = fopen("cpu-mandelbrot-1.ppm", "w");
+    FILE *fp = fopen("cpu-mandelbrot.ppm", "w");
     fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (int i = height - 1; i >= 0; i--)
         fwrite(row_ptrs[i], 1, width * sizeof(rgb_t), fp);

@@ -133,8 +133,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
-      <AdditionalOptions>--Wno-deprecated-gpu-targets  -fmad=false %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>--Wno-deprecated-gpu-targets --use_fast_math --fmad=true %(AdditionalOptions)</AdditionalOptions>
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <Optimization>InheritFromHost</Optimization>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -157,9 +159,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
 copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
-      <TargetMachinePlatform>64</TargetMachinePlatform>
-      <AdditionalOptions>--Wno-deprecated-gpu-targets  -fmad=false %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>--Wno-deprecated-gpu-targets --use_fast_math --fmad=true %(AdditionalOptions)</AdditionalOptions>
       <CodeGeneration>compute_30,sm_30</CodeGeneration>
+      <Optimization>InheritFromHost</Optimization>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

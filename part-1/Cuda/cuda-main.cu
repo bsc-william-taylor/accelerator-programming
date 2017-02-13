@@ -5,10 +5,9 @@ struct rgb_t
     unsigned char r, g, b;
 };
 
-__constant__ const uint8_t MaxIterations = std::numeric_limits<uint8_t>::max();
-__constant__ const double CenterX = -0.6, CenterY = 0.0;
-__constant__ const uint32_t MappingsLength = 16;
-__constant__ const rgb_t Mappings[MappingsLength]
+__constant__ const uint8_t CharMax = std::numeric_limits<uint8_t>::max();
+__constant__ const uint32_t ColoursSize = 16;
+__constant__ const rgb_t Colours[ColoursSize]
 {
     { 66,  30,   15 },
     { 25,   7,   26 },
@@ -28,42 +27,53 @@ __constant__ const rgb_t Mappings[MappingsLength]
     { 106,  52,  3 }
 };
 
+__constant__ const double Threshold = 0.0625;
+__constant__ const double Unknown = 0.25;
+__constant__ const double CenterX = -0.6;
+__constant__ const double CenterY = 0.0;
+
 __global__ void mandelbrot(cuda::launchInfo info, rgb_t* image, double scale)
 {
     const auto j = static_cast<int>(threadIdx.x + blockIdx.x * blockDim.x);
     const auto i = static_cast<int>(threadIdx.y + blockIdx.y * blockDim.y);
 
-    if (i >= info.size || j >= info.size)
+    if (j >= info.height || i >= info.width)
     {
         return;
     }
 
-    const auto x = (j - info.size / 2) * scale + CenterX;
-    const auto y = (i - info.size / 2) * scale + CenterY;
+    const auto y = (i - info.height / 2) * scale + CenterY;
+    const auto x = (j - info.width / 2) * scale + CenterX;
 
-    auto zx = hypot(x - 0.25, y);
+    auto zx = hypot(x - Unknown, y);
     
-    if (x < zx - 2 * zx * zx + 0.25 || (x + 1)*(x + 1) + y * y < 1 / 16)
+    if (zx - 2 * pow(zx, 2) + Unknown >= x)
     {
         return;
     }
 
-    uint8_t iter = 0;
-    auto zy = 0.0, zx2 = 0.0, zy2 = 0.0;
-    zx = 0.0;
+    if (pow(x + 1, 2) + pow(y, 2) < Threshold)
+    {
+        return;
+    }
 
+    double zy, zx2, zy2;
+    zx = zy = zx2 = zy2 = 0.0;
+    uint8_t iter = 0;
+   
     do
     {
         zy = 2.0 * zx * zy + y;
         zx = zx2 - zy2 + x;
-        zx2 = zx * zx;
-        zy2 = zy * zy;
-    } while (iter++ < 255 && zx2 + zy2 < 4);
+        zx2 = pow(zx, 2);
+        zy2 = pow(zy, 2);
+    } 
+    while (++iter < CharMax && zx2 + zy2 < 4.0);
 
-    if (iter != MaxIterations && iter != 0)
+    if (iter != CharMax && iter != 0)
     {
-        const auto flippedY = info.size - 1 - i;
-        image[j + info.size * flippedY] = Mappings[iter % MappingsLength];
+        const auto index = j + info.width * (info.height - i - 1);
+        image[index] = Colours[iter % ColoursSize];
     }
 }
 
@@ -77,19 +87,15 @@ void writeOutput(const std::string& filename, void* image, int width, int height
 
 int main(int argc, char *argv[])
 {
-    const auto height = argc > 1 ? atoi(argv[1]) : 4096*4;
-    const auto width = argc > 2 ? atoi(argv[2]) : 4096 * 4;
+    const auto height = argc > 1 ? atoi(argv[1]) : 4096;
+    const auto width = argc > 2 ? atoi(argv[2]) : 4096;
     const auto scale = 1.0 / (width / 4);
 
     std::vector<rgb_t> image(height * width);
 
-    cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, image.size());
-    cuda::memory<rgb_t*> imagePointer{ image.size() * sizeof(rgb_t), 0 };
-    cuda::benchmark<1>([&]()
-    {
-        start(mandelbrot, launchInfo, imagePointer, scale);
-    }) ;
-
+    cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, image.size());
+    cuda::memory<rgb_t*> imagePointer { image.size() * sizeof(rgb_t), 0 };
+    cuda::start(mandelbrot, launchInfo, imagePointer, scale); 
     cuda::move(imagePointer, image.data());
 
     writeOutput("gpu-mandelbrot.ppm", image.data(), width, height);
