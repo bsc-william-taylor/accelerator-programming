@@ -90,6 +90,8 @@ void calc_mandel(const int width, const int height, const double scale)
     }
 }
 
+#include "../benchmark.h"
+
 int main(int argc, char *argv[])
 {
     const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
@@ -102,5 +104,6 @@ int main(int argc, char *argv[])
 
     delete[] img_data;
     delete[] row_ptrs;
+  
     return 0;
 }
