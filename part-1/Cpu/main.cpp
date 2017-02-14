@@ -90,10 +90,12 @@ void calc_mandel(const int width, const int height, const double scale)
     }
 }
 
+#include "../benchmark.h"
+
 int main(int argc, char *argv[])
 {
-    const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
-    const int height = (argc > 2) ? std::atoi(argv[2]) : 4096;
+    const int width = (argc > 1) ? std::atoi(argv[1]) : 4096*4;
+    const int height = (argc > 2) ? std::atoi(argv[2]) : 4096*4;
     const double scale = 1. / (width / 4);
 
     alloc_2d(width, height);
@@ -102,5 +104,6 @@ int main(int argc, char *argv[])
 
     delete[] img_data;
     delete[] row_ptrs;
+  
     return 0;
 }

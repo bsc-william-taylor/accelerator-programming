@@ -38,21 +38,22 @@ public:
     }
 };
 
-
 template<unsigned times, typename Functor, typename... Args>
 void benchmark(Functor&& method, Args&&... args)
 {
-    csv<2> table("benchmark.h", "Benchmark Results");
+    using namespace std::chrono;
+    csv<2> table("benchmark.csv", "Benchmark Results");
     table.append_row("ID, Time (ms)");
     
     auto total = 0.0, millseconds = 0.0;
  
     for (auto i = 1u; i <= times; ++i) 
     {
-        const auto start = std::chrono::steady_clock::now();
+
+        const auto start = high_resolution_clock::now();
         method(std::forward<Args>(args)...);
-        const auto stop = std::chrono::steady_clock::now();
-        millseconds = (stop - start).count();
+        const auto stop = high_resolution_clock::now();
+        millseconds = duration_cast<milliseconds>(stop - start).count();
 
         table.append(i, ",", millseconds, "\n");
         total += millseconds;

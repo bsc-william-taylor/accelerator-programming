@@ -80,25 +80,26 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb_t* image, double scale)
 void writeOutput(const char* filename, void* data, int width, int height)
 { 
     std::ofstream file(filename);
-    file << "P6\n" << std::endl << width << " " << height << "\n255\n";
+    file << "P6\n" << width << " " << height << "\n255\n";
     file.write(static_cast<char*>(data), height * width * sizeof(rgb_t));
 }
 
 int main(int argc, char *argv[])
 {
-    const auto height = argc > 1 ? atoi(argv[1]) : 4096;
-    const auto width = argc > 2 ? atoi(argv[2]) : 4096;
+    const auto height = argc > 1 ? atoi(argv[1]) : 4096*4;
+    const auto width = argc > 2 ? atoi(argv[2]) : 4096*4;
     const auto scale = 1.0 / (width / 4);
 
-    std::vector<rgb_t> hostMemory(height * width);
+    cuda::benchmark<10>([&]()
+    {
+        std::vector<rgb_t> hostMemory(height * width);
 
-    cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, hostMemory.size());
-    cuda::memory<rgb_t*> deviceMemory { hostMemory.size() * sizeof(rgb_t), 0 };
-    cuda::start(mandelbrot, launchInfo, deviceMemory, scale);
+        cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, hostMemory.size());
+        cuda::memory<rgb_t*> deviceMemory{ hostMemory.size() * sizeof(rgb_t), 0 };
+        cuda::start(mandelbrot, launchInfo, deviceMemory, scale); cuda::move(deviceMemory, hostMemory.data());
 
-    // move device memory into host memory
-    cuda::move(deviceMemory, hostMemory.data());
-
-    writeOutput("gpu-mandelbrot.ppm", hostMemory.data(), width, height);
+        writeOutput("gpu-mandelbrot.ppm", hostMemory.data(), width, height);
+    });
+   
     return 0;
 }
