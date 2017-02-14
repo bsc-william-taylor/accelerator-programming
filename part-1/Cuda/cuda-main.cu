@@ -86,20 +86,16 @@ void writeOutput(const char* filename, void* data, int width, int height)
 
 int main(int argc, char *argv[])
 {
-    const auto height = argc > 1 ? atoi(argv[1]) : 4096*4;
-    const auto width = argc > 2 ? atoi(argv[2]) : 4096*4;
+    const auto height = argc > 1 ? atoi(argv[1]) : 4096;
+    const auto width = argc > 2 ? atoi(argv[2]) : 4096;
     const auto scale = 1.0 / (width / 4);
 
-    cuda::benchmark<10>([&]()
-    {
-        std::vector<rgb_t> hostMemory(height * width);
+    std::vector<rgb_t> hostMemory(height * width);
 
-        cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, hostMemory.size());
-        cuda::memory<rgb_t*> deviceMemory{ hostMemory.size() * sizeof(rgb_t), 0 };
-        cuda::start(mandelbrot, launchInfo, deviceMemory, scale); cuda::move(deviceMemory, hostMemory.data());
+    cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, hostMemory.size());
+    cuda::memory<rgb_t*> deviceMemory{ hostMemory.size() * sizeof(rgb_t), 0 };
+    cuda::start(mandelbrot, launchInfo, deviceMemory, scale); cuda::move(deviceMemory, hostMemory.data());
 
-        writeOutput("gpu-mandelbrot.ppm", hostMemory.data(), width, height);
-    });
-   
+    writeOutput("gpu-mandelbrot.ppm", hostMemory.data(), width, height);   
     return 0;
 }
