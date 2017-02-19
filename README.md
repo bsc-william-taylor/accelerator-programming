@@ -1,7 +1,5 @@
 
-<img src='mandelbrot.jpg' />
-
-<img src='cuda.jpg' width='150' align='right' />
+<img src='nvidia.png' height='150' width='150' align='right' />
 
 # Accelerator Programming
 
