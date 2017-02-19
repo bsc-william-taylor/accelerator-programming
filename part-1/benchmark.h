@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <fstream>
@@ -8,10 +7,9 @@ template<int C>
 class csv
 {
     std::ofstream output;
-    int columnIndex;
 public:
     explicit csv(const std::string& name, const std::string& title) :
-        output(name.c_str()), columnIndex(0)
+        output(name.c_str())
     {
         output << title.c_str();
         for (auto i = 1u; i < C; ++i)
@@ -49,7 +47,6 @@ void benchmark(Functor&& method, Args&&... args)
  
     for (auto i = 1u; i <= times; ++i) 
     {
-
         const auto start = high_resolution_clock::now();
         method(std::forward<Args>(args)...);
         const auto stop = high_resolution_clock::now();
