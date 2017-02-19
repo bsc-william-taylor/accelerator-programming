@@ -2,10 +2,9 @@
 #include <cstdlib>
 #include <cmath>
 #include <limits>
-#include <iostream>
 
 using uchar = unsigned char;
-const double cx = -0.6, cy = 0;
+const double cx = -.6, cy = 0;
 const uchar max_iter = std::numeric_limits<uchar>::max();
 
 struct rgb_t { unsigned char r, g, b; };
@@ -15,7 +14,7 @@ rgb_t  *img_data;
 
 void screen_dump(const int width, const int height)
 {
-    FILE *fp = fopen("cpu-mandelbrot.ppm", "w");
+    FILE *fp = fopen("out_mandelbrot.ppm", "w");
     fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (int i = height - 1; i >= 0; i--)
         fwrite(row_ptrs[i], 1, width * sizeof(rgb_t), fp);
@@ -56,7 +55,6 @@ void calc_mandel(const int width, const int height, const double scale)
 
         const double y = (i - height / 2) * scale + cy;
 
-
         rgb_t *px = row_ptrs[i];
         for (int j = 0; j < width; j++, px++) {
 
@@ -73,7 +71,7 @@ void calc_mandel(const int width, const int height, const double scale)
                 zy = 2 * zx * zy + y;
                 zx = zx2 - zy2 + x;
                 zx2 = zx * zx;
-                zy2 = zy * zy;              
+                zy2 = zy * zy;
             } while (iter++ < max_iter && zx2 + zy2 < 4);
 
             px->r = iter;
@@ -90,8 +88,6 @@ void calc_mandel(const int width, const int height, const double scale)
     }
 }
 
-#include "../benchmark.h"
-
 int main(int argc, char *argv[])
 {
     const int width = (argc > 1) ? std::atoi(argv[1]) : 4096;
@@ -104,6 +100,5 @@ int main(int argc, char *argv[])
 
     delete[] img_data;
     delete[] row_ptrs;
-  
     return 0;
 }
