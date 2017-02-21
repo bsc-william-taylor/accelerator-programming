@@ -14,7 +14,7 @@ rgb_t  *img_data;
 
 void screen_dump(const int width, const int height)
 {
-    FILE *fp = fopen("out_mandelbrot.ppm", "w");
+    FILE *fp = fopen("cpu-mandelbrot.ppm", "w");
     fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (int i = height - 1; i >= 0; i--)
         fwrite(row_ptrs[i], 1, width * sizeof(rgb_t), fp);
