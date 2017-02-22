@@ -28,7 +28,7 @@ __constant__ const rgb_t Colours[ColoursSize]
 };
 
 __constant__ const double Threshold = 0.0625;
-__constant__ const double Unknown = 0.25;
+__constant__ const double Padding = 0.25;
 __constant__ const double CenterX = -0.6;
 __constant__ const double CenterY = 0.0;
 
@@ -45,9 +45,9 @@ __global__ void mandelbrot(cuda::launchInfo info, rgb_t* image, double scale)
     const auto y = (i - info.height / 2) * scale + CenterY;
     const auto x = (j - info.width / 2) * scale + CenterX;
 
-    auto zx = hypot(x - Unknown, y);
+    auto zx = hypot(x - Padding, y);
     
-    if (zx - 2 * pow(zx, 2) + Unknown >= x)
+    if (zx - 2 * pow(zx, 2) + Padding >= x)
     {
         return;
     }
@@ -94,7 +94,8 @@ int main(int argc, char *argv[])
 
     cuda::launchInfo launchInfo = optimumLaunch(mandelbrot, width, height, hostMemory.size());
     cuda::memory<rgb_t*> deviceMemory{ hostMemory.size() * sizeof(rgb_t), 0 };
-    cuda::start(mandelbrot, launchInfo, deviceMemory, scale); cuda::move(deviceMemory, hostMemory.data());
+    cuda::start(mandelbrot, launchInfo, deviceMemory, scale);    
+    cuda::move(deviceMemory, hostMemory.data());
 
     writeOutput("gpu-mandelbrot.ppm", hostMemory.data(), width, height);   
     return 0;
