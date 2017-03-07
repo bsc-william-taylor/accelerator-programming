@@ -18,6 +18,7 @@ namespace Viewer
         {
             var fileDialog = new OpenFileDialog();
             fileDialog.Multiselect = false;
+            fileDialog.Filter = "PPM|*.ppm";
             
             if(fileDialog.ShowDialog() == Forms.DialogResult.OK)
             {
@@ -66,12 +67,7 @@ namespace Viewer
 
         private void Run(object sender, RoutedEventArgs e)
         {
-            Forms.MessageBox.Show("Run");
-        }
-
-        private void Settings(object sender, RoutedEventArgs e)
-        {
-            Forms.MessageBox.Show("Settings");
+            Forms.MessageBox.Show("Sharpen");
         }
 
         private void About(object sender, RoutedEventArgs e)

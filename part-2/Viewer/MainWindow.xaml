@@ -4,16 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Viewer"
+        WindowStartupLocation="CenterScreen"
         mc:Ignorable="d"
         Title="Viewer" Height="620" Width="600" ResizeMode="NoResize" Icon="icon.png">
-    <Grid>
-        <Image Source="http://placehold.it/512x512" Stretch="Fill" Name="ImageView" Margin="0,22,0,10"/>
+    <Grid Background="#CCCCCC">
+        <Image Source="http://placehold.it/600x620" Stretch="Uniform" Name="ImageView" Margin="0,22,0,10"/>
         <ProgressBar Name="Progress" Minimum="0" Maximum="100" Value="0" Margin="0,561,0,0" />
         <Menu x:Name="menu" HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="594">
-            <MenuItem Height="22" Header="View" Click="ViewImage"></MenuItem>
-            <MenuItem Height="22" Header="Run" Click="Run"></MenuItem>
-            <MenuItem Height="22" Header="Settings" Click="Settings"></MenuItem>
-            <MenuItem Height="22" Header="About" Click="About"></MenuItem>
+            <MenuItem Height="22" Header="Open" Click="ViewImage"></MenuItem>
+            <MenuItem Height="22" Header="Sharpen" Click="Run"></MenuItem>
+            <MenuItem Height="22" Header="Information" Click="About"></MenuItem>
         </Menu>
         
     </Grid>

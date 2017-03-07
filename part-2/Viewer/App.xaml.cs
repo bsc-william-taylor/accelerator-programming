@@ -4,22 +4,21 @@ using System.Drawing;
 using System.ComponentModel;
 using System;
 using System.Text;
-using System.Windows.Threading;
-using System.Threading.Tasks;
+
 namespace Viewer
 {
     public partial class App : Application
     {
-        public static string GetByte(BinaryReader reader, StringBuilder builder)
-        {
-            while (reader.BaseStream.Position != reader.BaseStream.Length)
+        public static string GetByte(char[] bytes, ref int pointer, StringBuilder builder)
+        {   
+            while (true)
             {
-                char temp = reader.ReadChar();
+                char temp = bytes[++pointer];
 
-                while(reader.BaseStream.Position != reader.BaseStream.Length)
+                while (true)
                 {
                     if (temp == '\n' && builder.Length == 0)
-                        temp = reader.ReadChar();
+                        temp = bytes[++pointer];
                     else
                         break;
                 }
@@ -39,38 +38,39 @@ namespace Viewer
         {
             worker.ReportProgress(0);
 
-            var builder = new StringBuilder();
-            var reader = new BinaryReader(new FileStream(file, FileMode.Open));
-            var magic = GetByte(reader, builder);
-            var width = int.Parse(GetByte(reader, builder));
-            var height = int.Parse(GetByte(reader, builder));
-            var maxValue = int.Parse(GetByte(reader, builder));
-            var totalWork = width * height;
-
-            Bitmap bitmap = new Bitmap(width, height);
-
-            for (int y = 0; y < height; ++y)
+            using (var reader = new BinaryReader(new FileStream(file, FileMode.Open)))
             {
-                for (int x = 0; x < width; ++x)
+                var bufferPosition = -1;
+                var builder = new StringBuilder();
+                var bytes = reader.ReadChars((int)reader.BaseStream.Length);
+                var magic = GetByte(bytes, ref bufferPosition, builder);
+                var width = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                var height = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                var maxValue = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+
+                Bitmap bitmap = new Bitmap(width, height);
+
+                for (int y = 0; y < height; ++y)
                 {
-                    var progress = (double)(width * y + x) / (double)totalWork;
-                    var r = int.Parse(GetByte(reader, builder));
-                    var g = int.Parse(GetByte(reader, builder));
-                    var b = int.Parse(GetByte(reader, builder));
+                    for (int x = 0; x < width; ++x)
+                    {
+                        var r = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                        var g = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                        var b = int.Parse(GetByte(bytes, ref bufferPosition, builder));
 
-                    bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
-                    worker.ReportProgress((int)(progress * 100.0));
-                }                
+                        bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
+                    }
+
+                    var progress = y / (double)height * 100.0;
+                    worker.ReportProgress((int)progress);
+                }
+
+                return bitmap;
             }
-
-            return bitmap;
         }
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            var processors = Environment.ProcessorCount;
-
-            MessageBox.Show(processors.ToString());
         }
     }
 }
