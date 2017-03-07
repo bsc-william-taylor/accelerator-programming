@@ -17,58 +17,57 @@
 std::string get_file_contents(const char *);
 
 struct ppm {
+    std::string magic;
+    std::string::size_type capacity;
+    unsigned w, h, max;
+    const unsigned nchannels = 3;  // e.g. RGB; RGBA has 4 channels
+    std::vector<std::uint8_t> data;
 
-  void read(const char *filename, std::vector<unsigned char> &data)
-  {
-    std::string str = get_file_contents(filename);
-    capacity = str.capacity();
-    std::stringstream ss(str);
-    ss >> magic >> w >> h >> max;
-    assert(max <= UCHAR_MAX);
-    data.reserve(w*h*nchannels);
-    unsigned u;
-    while (ss >> u)
-      data.push_back(u); // Yes, pushing an uint into a vector of uchars
-  }
-
-  void write(const char *filename, const std::vector<unsigned char> &data)
-  {
-    std::string str;
-    str.reserve(capacity);
-    std::stringstream ss(str);
-    ss << magic << '\n' << w << ' ' << h << '\n' << max << '\n';
-    unsigned count = 0;
-    for (const unsigned col : data) { // Yes, reading a uchar as a uint
-      ss << col << ' ';
-      if (++count == 18) { ss << '\n'; count = 0; }   // A tidy newline
+    ppm(const char* filename) {
+        std::string str = get_file_contents(filename);
+        capacity = str.capacity();
+        std::stringstream ss(str);
+        ss >> magic >> w >> h >> max;
+        assert(max <= UCHAR_MAX);
+        data.reserve(w*h*nchannels);
+        unsigned u;
+        while (ss >> u)
+            data.push_back(u); // Yes, pushing an uint into a vector of uchars
     }
 
-    std::ofstream out(filename, std::ios::out);
-    out << ss.rdbuf();
-    out.close();
-  }
+    void write(const char *filename, const std::vector<unsigned char> &data)
+    {
+        std::string str;
+        str.reserve(capacity);
+        std::stringstream ss(str);
+        ss << magic << '\n' << w << ' ' << h << '\n' << max << '\n';
+        unsigned count = 0;
+        for (const unsigned col : data) { // Yes, reading a uchar as a uint
+            ss << col << ' ';
+            if (++count == 18) { ss << '\n'; count = 0; }   // A tidy newline
+        }
 
-  std::string magic;
-  std::string::size_type capacity;
-  unsigned w, h, max;
-  const unsigned nchannels= 3;  // e.g. RGB; RGBA has 4 channels
+        std::ofstream out(filename, std::ios::out);
+        out << ss.rdbuf();
+        out.close();
+    }
 };
 
 // http://insanecoding.blogspot.co.uk/2011/11/how-to-read-in-file-in-c.html
 std::string get_file_contents(const char *filename)
 {
-  std::ifstream in(filename, std::ios::in);
-  if (in)
-  {
-    std::string contents;
-    in.seekg(0, std::ios::end);
-    contents.resize(in.tellg());
-    in.seekg(0, std::ios::beg);
-    in.read(&contents[0], contents.size());
-    in.close();
-    return contents;
-  }
-  throw errno;
+    std::ifstream in(filename, std::ios::in);
+    if (in)
+    {
+        std::string contents;
+        in.seekg(0, std::ios::end);
+        contents.resize(in.tellg());
+        in.seekg(0, std::ios::beg);
+        in.read(&contents[0], contents.size());
+        in.close();
+        return contents;
+    }
+    throw errno;
 }
 
 #endif // _PPM_HPP_

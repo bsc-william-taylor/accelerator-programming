@@ -17,13 +17,13 @@ namespace Viewer
 
                 while (true)
                 {
-                    if (temp == '\n' && builder.Length == 0)
+                    if ((temp == '\n' || temp == '\r') && builder.Length == 0)
                         temp = bytes[++pointer];
                     else
                         break;
                 }
 
-                if (temp != ' ' && temp != '\n')
+                if (temp != ' ' && temp != '\n' && temp != '\r')
                     builder.Append(temp);
                 else
                     break;
@@ -54,11 +54,18 @@ namespace Viewer
                 {
                     for (int x = 0; x < width; ++x)
                     {
-                        var r = int.Parse(GetByte(bytes, ref bufferPosition, builder));
-                        var g = int.Parse(GetByte(bytes, ref bufferPosition, builder));
-                        var b = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                        try 
+                        {
+                            var r = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                            var g = int.Parse(GetByte(bytes, ref bufferPosition, builder));
+                            var b = int.Parse(GetByte(bytes, ref bufferPosition, builder));
 
-                        bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
+                            bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
+                        }
+                        catch(Exception e)
+                        {
+                            MessageBox.Show($"Error reading at pixel -> {x}:{y}");
+                        }
                     }
 
                     var progress = y / (double)height * 100.0;

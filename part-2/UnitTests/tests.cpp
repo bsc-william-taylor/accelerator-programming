@@ -4,10 +4,10 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTests
 {		
-	TEST_CLASS(UnitTest1)
+	TEST_CLASS(OutputTests)
 	{
 	public:
-		TEST_METHOD(TestMethod1)
+		TEST_METHOD(MatchingOutput)
 		{
 		}
 	};
