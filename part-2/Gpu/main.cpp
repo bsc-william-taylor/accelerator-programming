@@ -23,61 +23,41 @@ std::string kernel(const std::string& filename)
 
 int main(int argc, const char * argv[]) 
 {
-    std::string source = kernel("helloworld.cl");
-    std::vector<double> a(N, 1), b(N, 2), c(N);
-    std::vector<cl::Platform> platform;
-    std::vector<cl::Device> device;
+    std::string src = kernel("kernels.cl"), name, version;
+    std::vector<float> a(N, 1), b(N, 2), c(N);
+    std::vector<cl::Device> devices;
 
-    cl::Platform::get(&platform);
-    cl::Context context;
+    cl::Platform p = cl::Platform::getDefault();
+    cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.length()));
 
-    for (auto p = platform.begin(); device.empty() && p != platform.end(); p++) 
-    {
-        std::vector<cl::Device> pldev;
-        p->getDevices(CL_DEVICE_TYPE_ALL, &pldev);
+    p.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+    p.getInfo(CL_PLATFORM_VERSION, &version);
+    p.getInfo(CL_PLATFORM_NAME, &name);
 
-        for (auto d = pldev.begin(); device.empty() && d != pldev.end(); d++) 
-        {
-            if (!d->getInfo<CL_DEVICE_AVAILABLE>())
-            {
-                continue;
-            }
-
-            std::string ext = d->getInfo<CL_DEVICE_EXTENSIONS>();
-
-            if (ext.find("cl_khr_fp64") == std::string::npos && ext.find("cl_amd_fp64") == std::string::npos)
-            {
-                continue;
-            }
-
-            device.push_back(*d);
-            context = cl::Context(device);
-        }
-    }
-
-    cl::CommandQueue queue(context, device.front());
-    cl::Program program(context, cl::Program::Sources(1, std::make_pair(source.c_str(), source.length())));
+    cl::Device device = devices.front();
+    cl::Context context = cl::Context(device);
+    cl::CommandQueue queue(context, device);
+    cl::Program program(context, kernel);
 
     try
     {
-        program.build(device);
+        program.build();
     }
-    catch (const cl::Error&)
+    catch (const cl::Error& e)
     {
-        std::cerr
-            << "OpenCL compilation error" << std::endl
-            << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device[0])
+        std::cerr 
+            << "Exception Caught: " << e.what() << std::endl 
+            << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) 
             << std::endl;
-        std::cin.get();
-        return 1;
     }
 
     try
     {
+        // Placeholder kernel launch
         cl::Kernel add(program, "add");
-        cl::Buffer A(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, a.size() * sizeof(double), a.data());
-        cl::Buffer B(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, b.size() * sizeof(double), b.data());
-        cl::Buffer C(context, CL_MEM_READ_WRITE, c.size() * sizeof(double));
+        cl::Buffer A(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, a.size() * sizeof(float), a.data());
+        cl::Buffer B(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, b.size() * sizeof(float), b.data());
+        cl::Buffer C(context, CL_MEM_READ_WRITE, c.size() * sizeof(float));
 
         add.setArg(0, static_cast<cl_ulong>(N));
         add.setArg(1, A);
@@ -85,19 +65,12 @@ int main(int argc, const char * argv[])
         add.setArg(3, C);
 
         queue.enqueueNDRangeKernel(add, cl::NullRange, N, cl::NullRange);
-        queue.enqueueReadBuffer(C, CL_TRUE, 0, c.size() * sizeof(double), c.data());
+        queue.enqueueReadBuffer(C, CL_TRUE, 0, c.size() * sizeof(float), c.data());
     }
-    catch (const cl::Error& err)
+    catch (const cl::Error& e)
     {
-        std::cerr
-            << "OpenCL error" << std::endl
-            << err.what()
-            << std::endl;
-        std::cin.get();
-        return 1;
+        std::cerr << "Exception Caught: " << e.what() << std::endl;
     }
 
-    std::cout << "Success = " << (c[0] == 3 ? "true" : "false") << std::endl;
-    std::cin.get();
-    return 0;
+   return EXIT_SUCCESS;
 }
