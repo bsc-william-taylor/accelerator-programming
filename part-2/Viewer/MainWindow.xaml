@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:Viewer"
         WindowStartupLocation="CenterScreen"
         mc:Ignorable="d"
+        KeyDown="Window_KeyDown"
         Title="Viewer" Height="620" Width="600" ResizeMode="NoResize" Icon="icon.png">
     <Grid Background="#CCCCCC">
         <Image Source="http://placehold.it/600x620" Stretch="Uniform" Name="ImageView" Margin="0,22,0,10"/>
@@ -14,6 +15,7 @@
             <MenuItem Height="22" Header="Open" Click="ViewImage"></MenuItem>
             <MenuItem Height="22" Header="Sharpen" Click="Run"></MenuItem>
             <MenuItem Height="22" Header="Information" Click="About"></MenuItem>
+            <MenuItem Height="22" Header="Clear Cache" Click="ClearCache"></MenuItem>
         </Menu>
         
     </Grid>

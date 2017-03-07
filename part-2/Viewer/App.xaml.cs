@@ -75,9 +75,5 @@ namespace Viewer
                 return bitmap;
             }
         }
-
-        private void Application_Startup(object sender, StartupEventArgs e)
-        {
-        }
     }
 }

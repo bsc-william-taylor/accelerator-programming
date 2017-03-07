@@ -4,11 +4,16 @@ using System.IO;
 using System.Windows.Forms;
 using Forms = System.Windows.Forms;
 using System.ComponentModel;
+using System.Collections.Generic;
+using System;
 
 namespace Viewer
 {
     public partial class MainWindow : Window
     {
+        List<BitmapImage> LoadedImages = new List<BitmapImage>();
+        int LoadedImageIndex = 0;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -34,6 +39,8 @@ namespace Viewer
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             ImageView.Source = (BitmapImage)e.Result;
+            LoadedImages.Add((BitmapImage)e.Result);
+            LoadedImageIndex++;
         }
 
         private void Worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -72,7 +79,36 @@ namespace Viewer
 
         private void About(object sender, RoutedEventArgs e)
         {
-            Forms.MessageBox.Show("About");
+            var title = "Information";
+            var body = @"This a viewer app for PPM files.";
+
+            Forms.MessageBox.Show(body, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if(e.Key == System.Windows.Input.Key.Right && LoadedImageIndex + 1 < LoadedImages.Count)
+            {
+                ImageView.Source = LoadedImages[++LoadedImageIndex];
+            }
+
+            if (e.Key == System.Windows.Input.Key.Left && LoadedImageIndex-1 >= 0)
+            {
+                ImageView.Source = LoadedImages[--LoadedImageIndex];
+            }
+        }
+
+        private void ClearCache(object sender, RoutedEventArgs e)
+        {
+            LoadedImages.Clear();
+            LoadedImageIndex = 0;
+
+            BitmapImage bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri("http://placehold.it/600x620", UriKind.Absolute);
+            bitmap.EndInit();
+
+            ImageView.Source = bitmap;
         }
     }
 }
