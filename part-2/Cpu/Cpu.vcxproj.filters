@@ -3,14 +3,4 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <Filter Include="deps">
-      <UniqueIdentifier>{ceee2936-a7a1-46e7-824b-dd2fa837348c}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="ppm.hpp">
-      <Filter>deps</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>
