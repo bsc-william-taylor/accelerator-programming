@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenCL", "OpenCL\OpenCL.vcxproj", "{E99F5DFC-113A-4BC3-8253-90A6AC0C9A9D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gpu", "Gpu\Gpu.vcxproj", "{E99F5DFC-113A-4BC3-8253-90A6AC0C9A9D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cpu", "Cpu\Cpu.vcxproj", "{20C0489D-4BB1-404C-9777-B0FA78EA1F40}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests", "UnitTests\UnitTests.vcxproj", "{79BEBC73-9005-4364-BF01-415507DA3354}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tests", "Tests\Tests.vcxproj", "{79BEBC73-9005-4364-BF01-415507DA3354}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Viewer", "Viewer\Viewer.csproj", "{2BECA809-04C9-4848-B90F-9C63C0B8C062}"
 EndProject
