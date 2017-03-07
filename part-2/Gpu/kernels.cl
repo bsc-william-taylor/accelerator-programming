@@ -24,11 +24,14 @@ kernel void add_weighted(read_only image2d_t input, read_only image2d_t blur, wr
     write_imagef(output, px, (float4)(r, g, b, colour.w));
 }
 
-kernel void gaussian_blur(read_only image2d_t input, write_only image2d_t output, int radius)
+kernel void gaussian_blur(read_only image2d_t input, write_only image2d_t output, const float* mask, const int radius)
 { 
-    size_t x = get_global_id(0);
-    size_t y = get_global_id(1);
+    int2 px = (int2)(get_global_id(0), get_global_id(y));
 
-    // TODO: Implement full gaussian blur
+    float r = 0.0, g = 0.0, b = 0.0;
+
+    // TODO: implement blur loop
+    
+    write_imagef(output, px, (float4)(r, g, b, input.w));
 }
 
