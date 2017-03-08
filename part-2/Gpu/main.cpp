@@ -1,5 +1,5 @@
 #pragma warning (disable: 4996)
-
+#define _USE_MATH_DEFINES
 #include "../Cpu/ppm.hpp"
 #include <CL/cl.hpp>
 #include <iostream>
@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <math.h>
 
 namespace cl {
     /*
@@ -33,7 +34,7 @@ auto kernel(const std::string& filename)
     std::string str;
     while (std::getline(file, str))
     {
-        ss << str;
+        ss << str << std::endl;
     }
     return ss.str();
 }
@@ -78,6 +79,34 @@ auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
     return rgb;
 }
 
+std::vector<float> gaussianKernel(const int inRadius)
+{
+    int mem_amount = (inRadius * 2) + 1;
+    std::vector<float> kernel(mem_amount);
+
+    float twoRadiusSquaredRecip = 1.0 / (2.0 * inRadius * inRadius);
+    float sqrtTwoPiTimesRadiusRecip = 1.0 / (sqrt(2.0 * M_PI) * inRadius);
+
+    int r = -inRadius;
+    float sum = 0.0f;
+    for (int i = 0; i < mem_amount; i++)
+    {
+        float x = r;
+        x *= x;
+        float v = sqrtTwoPiTimesRadiusRecip * exp(-x * twoRadiusSquaredRecip);
+        kernel[i] = v;
+
+        sum += v;
+        r++;
+    }
+
+    float div = sum;
+    for (int i = 0; i < mem_amount; i++)
+        kernel[i] /= div;
+
+    return kernel;
+}
+
 int main(int argc, const char * argv[])
 {
     auto radius = std::atoi(arg(argc, argv, 3, "5"));
@@ -118,19 +147,26 @@ int main(int argc, const char * argv[])
 
     try
     {
-        cl::ImageFormat format{ CL_RGBA, CL_UNORM_INT8 };
-        cl::Image2D imageBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, rgba.data());
-        cl::Image2D resultBuffer(context, CL_MEM_READ_WRITE, format, image.w, image.h);
+        std::vector<float> mask = gaussianKernel(radius);
+
+        cl::Buffer maskBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, mask.size() * sizeof(float), mask.data());
+        cl::Image2D imageBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, { CL_RGBA, CL_UNORM_INT8 }, image.w, image.h, 0, rgba.data());
+        cl::Image2D outputBuffer(context, CL_MEM_READ_WRITE, { CL_RGBA, CL_UNORM_INT8 }, image.w, image.h);
+       
         cl::size_t<3> region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
         cl::size_t<3> origin = cl::new_size_t<3>({ 0, 0, 0 });
 
         cl::NDRange local(1, 1), global(image.w, image.h);
-        cl::Kernel copy(program, "copy");
-        copy.setArg(0, imageBuffer);
-        copy.setArg(1, resultBuffer);
+        cl::Kernel blur(program, "unsharp_mask");
+           
+        // refactor into templated array function
+        blur.setArg(0, imageBuffer);
+        blur.setArg(1, outputBuffer);
+        blur.setArg(2, maskBuffer);
+        blur.setArg(3, radius);
 
-        queue.enqueueNDRangeKernel(copy, cl::NullRange, global, local);
-        queue.enqueueReadImage(resultBuffer, CL_TRUE, origin, region, 0, 0, outputPixels.data());
+        queue.enqueueNDRangeKernel(blur, cl::NullRange, global, local);
+        queue.enqueueReadImage(outputBuffer, CL_TRUE, origin, region, 0, 0, outputPixels.data());
 
         image.write(output, rgb_from_rgba(outputPixels, image.w, image.h));
     }
@@ -140,5 +176,5 @@ int main(int argc, const char * argv[])
         std::cerr << "Code: " << e.err() << std::endl;
     }
 
-    return std::cin.get();
+    return 0;
 }
