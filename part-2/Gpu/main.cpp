@@ -87,7 +87,7 @@ std::vector<float> gaussianKernel(const int radius)
 
     float sqrtTwoPiTimesRadiusRecip = 1.0 / (sqrt(2.0 * M_PI) * radius);
     float twoRadiusSquaredRecip = 1.0 / (2.0 * pow(radius, 2.0));
-    
+
 
     int r = -radius;
     float sum = 0.0f;
@@ -160,13 +160,14 @@ int main(int argc, const char * argv[])
         queue.enqueueNDRangeKernel(blur, cl::NullRange, global, local);
         queue.enqueueReadImage(outputBuffer, CL_TRUE, origin, region, 0, 0, outputPixels.data());
 
-        image.write(output, rgb_from_rgba(outputPixels, image.w, image.h));
+
     }
     catch (const cl::Error& e)
     {
         std::cerr << "Exception Caught: " << e.what() << std::endl;
     }
-   
+
+    image.write(output, rgb_from_rgba(outputPixels, image.w, image.h));
 
     return 0;
 }

@@ -35,8 +35,8 @@ void pixel_average(std::uint8_t *out, std::uint8_t *in, int x, int y, int radius
 {
     auto samples = pow((radius * 2 - 1), 2);
     auto r = 0.0f, g = 0.0f, b = 0.0f;
- 
-   for (auto j = y - radius + 1; j < y + radius; ++j)
+
+    for (auto j = y - radius + 1; j < y + radius; ++j)
     {
         for (auto i = x - radius + 1; i < x + radius; ++i)
         {
@@ -102,11 +102,13 @@ int main(int argc, char *argv[])
 {
     auto radius = std::atoi(arg(argc, argv, 3, "5"));
     auto output = arg(argc, argv, 2, "./out.ppm");
-    auto input = arg(argc, argv, 1, "./lena.ppm");
+    auto input = arg(argc, argv, 1, "../library/lena.ppm");
 
     ppm image(input);
+
     std::vector<std::uint8_t> data_sharp(image.w * image.h * image.nchannels);
     unsharp_mask(data_sharp.data(), image.data.data(), radius, image.w, image.h, image.nchannels);
+
     image.write(output, data_sharp);
     return 0;
 }
