@@ -79,17 +79,17 @@ auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
     return rgb;
 }
 
-std::vector<float> gaussianKernel(const int inRadius)
+std::vector<float> gaussianKernel(const int radius)
 {
-    int mem_amount = (inRadius * 2) + 1;
-    std::vector<float> kernel(mem_amount);
+    std::vector<float> kernel((radius * 2) + 1);
 
-    float twoRadiusSquaredRecip = 1.0 / (2.0 * inRadius * inRadius);
-    float sqrtTwoPiTimesRadiusRecip = 1.0 / (sqrt(2.0 * M_PI) * inRadius);
+    float sqrtTwoPiTimesRadiusRecip = 1.0 / (sqrt(2.0 * M_PI) * radius);
+    float twoRadiusSquaredRecip = 1.0 / (2.0 * pow(radius, 2.0));
+    
 
-    int r = -inRadius;
+    int r = -radius;
     float sum = 0.0f;
-    for (int i = 0; i < mem_amount; i++)
+    for (int i = 0; i < kernel.size(); i++)
     {
         float x = r;
         x *= x;
@@ -101,7 +101,7 @@ std::vector<float> gaussianKernel(const int inRadius)
     }
 
     float div = sum;
-    for (int i = 0; i < mem_amount; i++)
+    for (int i = 0; i < kernel.size(); i++)
         kernel[i] /= div;
 
     return kernel;
@@ -109,24 +109,20 @@ std::vector<float> gaussianKernel(const int inRadius)
 
 int main(int argc, const char * argv[])
 {
+    ppm image(arg(argc, argv, 1, "../Cpu/lena.ppm"));
+
     auto radius = std::atoi(arg(argc, argv, 3, "5"));
     auto output = arg(argc, argv, 2, "./cl-out.ppm");
-    auto input = arg(argc, argv, 1, "../Cpu/lena.ppm");
-
-    ppm image(input);
-
     auto rgba = rgb_to_rgba(image.data, image.w, image.h);
 
-    std::string src = kernel("kernels.cl"), name, version;
+    std::string src = kernel("kernels.cl");
     std::vector<cl::Device> devices;
     std::vector<std::uint8_t> outputPixels(rgba.size());
+    std::vector<float> mask = gaussianKernel(radius);
 
-    cl::Platform p = cl::Platform::getDefault();
     cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.length()));
-
+    cl::Platform p = cl::Platform::getDefault();
     p.getDevices(CL_DEVICE_TYPE_GPU, &devices);
-    p.getInfo(CL_PLATFORM_VERSION, &version);
-    p.getInfo(CL_PLATFORM_NAME, &name);
 
     cl::Device device = devices.front();
     cl::Context context = cl::Context(device);
@@ -139,27 +135,21 @@ int main(int argc, const char * argv[])
     }
     catch (const cl::Error& e)
     {
-        std::cerr
-            << "Exception Caught: " << e.what() << std::endl
-            << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device)
-            << std::endl;
+        std::cerr << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
     }
 
     try
     {
-        std::vector<float> mask = gaussianKernel(radius);
-
+        cl::ImageFormat format{ CL_RGBA, CL_UNORM_INT8 };
         cl::Buffer maskBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, mask.size() * sizeof(float), mask.data());
-        cl::Image2D imageBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, { CL_RGBA, CL_UNORM_INT8 }, image.w, image.h, 0, rgba.data());
-        cl::Image2D outputBuffer(context, CL_MEM_READ_WRITE, { CL_RGBA, CL_UNORM_INT8 }, image.w, image.h);
-       
+        cl::Image2D imageBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, rgba.data());
+        cl::Image2D outputBuffer(context, CL_MEM_READ_WRITE, format, image.w, image.h);
+
         cl::size_t<3> region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
         cl::size_t<3> origin = cl::new_size_t<3>({ 0, 0, 0 });
-
         cl::NDRange local(1, 1), global(image.w, image.h);
         cl::Kernel blur(program, "unsharp_mask");
-           
-        // refactor into templated array function
+
         blur.setArg(0, imageBuffer);
         blur.setArg(1, outputBuffer);
         blur.setArg(2, maskBuffer);
@@ -173,8 +163,8 @@ int main(int argc, const char * argv[])
     catch (const cl::Error& e)
     {
         std::cerr << "Exception Caught: " << e.what() << std::endl;
-        std::cerr << "Code: " << e.err() << std::endl;
     }
+   
 
     return 0;
 }
