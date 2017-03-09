@@ -1,7 +1,12 @@
+
 #pragma warning (disable: 4996)
+
 #define _USE_MATH_DEFINES
-#include "../Cpu/ppm.hpp"
-#include <CL/cl.hpp>
+
+#include "../library/benchmark.hpp"
+#include "../library/ppm.hpp"
+
+#include <cl/cl.hpp>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -10,9 +15,6 @@
 #include <math.h>
 
 namespace cl {
-    /*
-     * How is this not part of the fucking standard!
-     */
     template<int L>
     cl::size_t<L> new_size_t(std::vector<int> numbers) {
         cl::size_t<L> sz;

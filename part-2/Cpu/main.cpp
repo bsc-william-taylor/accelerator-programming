@@ -1,5 +1,6 @@
-#include "../../part-1/benchmark.h"
-#include "ppm.hpp"
+
+#include "../library/benchmark.hpp"
+#include "../library/ppm.hpp"
 
 enum Channels { R, G, B };
 

@@ -3,15 +3,13 @@ kernel void unsharp_mask(read_only image2d_t input, write_only image2d_t output,
 {
     sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 
+    const float alpha = 1.5, beta = -0.5, gamma = 0.0;
     const int halfRadius = (int)floor(radius / 2.0);
-    const int x = get_global_id(0);
-    const int y = get_global_id(1);
+    const int x = get_global_id(0),y = get_global_id(1);
 
     float4 blurred = (float4)0.0;
-
-    int index = 0; 
     
-    for (int i = -halfRadius; i <= halfRadius; ++i)
+    for (int i = -halfRadius, index = 0; i <= halfRadius; ++i)
     {
 	    for (int j = -halfRadius; j <= halfRadius; ++j)
 	    {				
@@ -20,14 +18,10 @@ kernel void unsharp_mask(read_only image2d_t input, write_only image2d_t output,
             index++;
 	    }
     }
-    
+   
     const float4 colour = read_imagef(input, sampler, (int2)(x, y));
+    const float4 result = colour * alpha + blurred * beta + gamma; 
 
-    const float alpha = 1.5, beta = -0.5, gamma = 0.0;
-    const float r = colour.x * alpha + blurred.x * beta + gamma;
-    const float g = colour.y * alpha + blurred.y * beta + gamma;
-    const float b = colour.z * alpha + blurred.z * beta + gamma;
-
-    write_imagef(output, (int2)(x, y), (float4)(r, g, b, colour.w));
+    write_imagef(output, (int2)(x, y), result);
 }
 
