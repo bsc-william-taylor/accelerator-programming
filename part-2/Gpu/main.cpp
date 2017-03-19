@@ -81,46 +81,45 @@ auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
     return rgb;
 }
 
-std::vector<float> gaussianKernel(const int radius)
+std::vector<float> filter(const int radius, const float weight = 1.0f)
 {
-    std::vector<float> kernel((radius * 2) + 1);
+    std::vector<float> matrix;
+    matrix.reserve(radius*radius);
 
-    float sqrtTwoPiTimesRadiusRecip = 1.0 / (sqrt(2.0 * M_PI) * radius);
-    float twoRadiusSquaredRecip = 1.0 / (2.0 * pow(radius, 2.0));
+    float stdv = weight, s = 2.0 * stdv * stdv;  
+    float sum = 0.0;  
 
+    const int size = floor(radius / 2.0);
 
-    int r = -radius;
-    float sum = 0.0f;
-    for (int i = 0; i < kernel.size(); i++)
+    for (int x = -size; x <= size; x++)
     {
-        float x = r;
-        x *= x;
-        float v = sqrtTwoPiTimesRadiusRecip * exp(-x * twoRadiusSquaredRecip);
-        kernel[i] = v;
-
-        sum += v;
-        r++;
+        for (int y = -size; y <= size; y++)
+        {
+            float r = sqrt(x*x + y*y);
+            auto value = (exp(-(r*r) / s)) * 1.0 / (sqrt(2.0 * M_PI) * stdv);
+            sum += value;
+            matrix.push_back(value);
+        }
     }
 
-    float div = sum;
-    for (int i = 0; i < kernel.size(); i++)
-        kernel[i] /= div;
+    for (int i = 0; i < matrix.size(); i++)
+        matrix[i] /= sum;
 
-    return kernel;
+    return matrix;
 }
 
 int main(int argc, const char * argv[])
 {
-    ppm image(arg(argc, argv, 1, "../Cpu/lena.ppm"));
+    ppm image(arg(argc, argv, 1, "../Library/lena.ppm"));
 
-    auto radius = std::atoi(arg(argc, argv, 3, "5"));
+    auto radius = (int)pow(std::atoi(arg(argc, argv, 3, "3")), 2);
     auto output = arg(argc, argv, 2, "./cl-out.ppm");
     auto rgba = rgb_to_rgba(image.data, image.w, image.h);
 
     std::string src = kernel("kernels.cl");
     std::vector<cl::Device> devices;
     std::vector<std::uint8_t> outputPixels(rgba.size());
-    std::vector<float> mask = gaussianKernel(radius);
+    std::vector<float> mask = filter(radius, 5.0f);
 
     cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.length()));
     cl::Platform p = cl::Platform::getDefault();
@@ -149,7 +148,7 @@ int main(int argc, const char * argv[])
 
         cl::size_t<3> region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
         cl::size_t<3> origin = cl::new_size_t<3>({ 0, 0, 0 });
-        cl::NDRange local(1, 1), global(image.w, image.h);
+        cl::NDRange local(16, 16), global(image.w, image.h);
         cl::Kernel blur(program, "unsharp_mask");
 
         blur.setArg(0, imageBuffer);
@@ -159,15 +158,12 @@ int main(int argc, const char * argv[])
 
         queue.enqueueNDRangeKernel(blur, cl::NullRange, global, local);
         queue.enqueueReadImage(outputBuffer, CL_TRUE, origin, region, 0, 0, outputPixels.data());
-
-
     }
     catch (const cl::Error& e)
     {
         std::cerr << "Exception Caught: " << e.what() << std::endl;
     }
-
+   
     image.write(output, rgb_from_rgba(outputPixels, image.w, image.h));
-
     return 0;
 }

@@ -100,7 +100,7 @@ void unsharp_mask(std::uint8_t *out, std::uint8_t *in, int radius, int w, int h,
 
 int main(int argc, char *argv[])
 {
-    auto radius = std::atoi(arg(argc, argv, 3, "5"));
+    auto radius = std::atoi(arg(argc, argv, 3, "3"));
     auto output = arg(argc, argv, 2, "./out.ppm");
     auto input = arg(argc, argv, 1, "../library/lena.ppm");
 
@@ -108,8 +108,8 @@ int main(int argc, char *argv[])
 
     std::vector<std::uint8_t> data_sharp(image.w * image.h * image.nchannels);
     unsharp_mask(data_sharp.data(), image.data.data(), radius, image.w, image.h, image.nchannels);
-
     image.write(output, data_sharp);
+    
     return 0;
 }
 
