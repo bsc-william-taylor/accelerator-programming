@@ -3,6 +3,7 @@
   <ItemGroup>
     <ClInclude Include="ppm.hpp" />
     <ClInclude Include="benchmark.hpp" />
+    <ClInclude Include="utilities.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lena.ppm">

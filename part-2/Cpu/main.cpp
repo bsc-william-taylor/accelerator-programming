@@ -1,28 +1,7 @@
 
 #include "../library/benchmark.hpp"
+#include "../Library/utilities.hpp"
 #include "../library/ppm.hpp"
-
-enum Channels { R, G, B };
-
-template<typename L, typename T>
-L clamp(T value)
-{
-    const auto min = std::numeric_limits<L>::min();
-    const auto max = std::numeric_limits<L>::max();
-
-    return static_cast<L>(value < min ? min : value > max ? max : value);
-}
-
-template<typename T>
-T clamp(T value, T min, T max)
-{
-    return value < min ? min : value >= max ? max - 1 : value;
-}
-
-const auto arg = [](auto argc, auto argv, auto index, auto value)
-{
-    return argc > index ? argv[index] : value;
-};
 
 const auto set_colour = [](auto pixels, auto offset, auto r, auto g, auto b)
 {
@@ -93,9 +72,9 @@ void unsharp_mask(std::uint8_t *out, std::uint8_t *in, int radius, int w, int h,
 
     blur(blur1.data(), in, radius, w, h, channels);
     blur(blur2.data(), blur1.data(), radius, w, h, channels);
-    blur(blur3.data(), blur2.data(), radius, w, h, channels);
+    blur(out, blur2.data(), radius, w, h, channels);
 
-    add_weighted(out, in, blur3.data(), w, h, channels);
+    //add_weighted(out, in, blur3.data(), w, h, channels);
 }
 
 int main(int argc, char *argv[])

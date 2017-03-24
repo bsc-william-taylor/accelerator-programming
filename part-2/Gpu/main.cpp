@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES
 
 #include "../library/benchmark.hpp"
+#include "../library/utilities.hpp"
 #include "../library/ppm.hpp"
 
 #include <cl/cl.hpp>
@@ -13,73 +14,6 @@
 #include <fstream>
 #include <sstream>
 #include <math.h>
-
-namespace cl {
-    template<int L>
-    cl::size_t<L> new_size_t(std::vector<int> numbers) {
-        cl::size_t<L> sz;
-        for (int i = 0; i < L; i++)
-            sz[i] = numbers[i];
-        return sz;
-    }
-}
-
-const auto arg = [](auto argc, auto argv, auto index, auto value)
-{
-    return argc > index ? argv[index] : value;
-};
-
-auto kernel(const std::string& filename)
-{
-    std::ifstream file(filename);
-    std::stringstream ss;
-    std::string str;
-    while (std::getline(file, str))
-    {
-        ss << str << std::endl;
-    }
-    return ss.str();
-}
-
-auto rgb_to_rgba(std::vector<std::uint8_t>& rgb, int width, int height)
-{
-    std::vector<std::uint8_t> rgba(width*height * 4);
-
-    for (int y = 0; y < height; ++y)
-    {
-        for (int x = 0; x < width; ++x)
-        {
-            auto rgb_index = (y * width + x) * 3;
-            auto rgba_index = (y * width + x) * 4;
-
-            rgba[rgba_index + 0] = rgb[rgb_index + 0];
-            rgba[rgba_index + 1] = rgb[rgb_index + 1];
-            rgba[rgba_index + 2] = rgb[rgb_index + 2];
-            rgba[rgba_index + 3] = 255;
-        }
-    }
-
-    return rgba;
-}
-auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
-{
-    std::vector<std::uint8_t> rgb(width*height * 3);
-
-    for (int y = 0; y < height; ++y)
-    {
-        for (int x = 0; x < width; ++x)
-        {
-            auto rgb_index = (y * width + x) * 3;
-            auto rgba_index = (y * width + x) * 4;
-
-            rgb[rgb_index + 0] = rgba[rgba_index + 0];
-            rgb[rgb_index + 1] = rgba[rgba_index + 1];
-            rgb[rgb_index + 2] = rgba[rgba_index + 2];
-        }
-    }
-
-    return rgb;
-}
 
 std::vector<float> filter(const int radius, const float weight = 1.0f)
 {
@@ -112,6 +46,7 @@ int main(int argc, const char * argv[])
 {
     ppm image(arg(argc, argv, 1, "../Library/lena.ppm"));
 
+    auto testing = pow((3 * 2 - 1), 2);
     auto radius = (int)pow(std::atoi(arg(argc, argv, 3, "3")), 2);
     auto output = arg(argc, argv, 2, "./cl-out.ppm");
     auto rgba = rgb_to_rgba(image.data, image.w, image.h);

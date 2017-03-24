@@ -24,6 +24,13 @@ struct ppm {
     std::vector<std::uint8_t> data;
 
     ppm(const char* filename) {
+       read(filename);
+    }
+
+    ppm() = default;
+
+    void read(const char* filename) {
+        data.clear();
         std::string str = get_file_contents(filename);
         capacity = str.capacity();
         std::stringstream ss(str);
