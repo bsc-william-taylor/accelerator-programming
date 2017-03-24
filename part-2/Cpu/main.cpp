@@ -1,4 +1,6 @@
 
+#define IGNORE_CL
+
 #include "../library/benchmark.hpp"
 #include "../Library/utilities.hpp"
 #include "../library/ppm.hpp"
@@ -74,7 +76,7 @@ void unsharp_mask(std::uint8_t *out, std::uint8_t *in, int radius, int w, int h,
     blur(blur2.data(), blur1.data(), radius, w, h, channels);
     blur(out, blur2.data(), radius, w, h, channels);
 
-    //add_weighted(out, in, blur3.data(), w, h, channels);
+    add_weighted(out, in, blur3.data(), w, h, channels);
 }
 
 int main(int argc, char *argv[])

@@ -4,6 +4,7 @@
     <ClInclude Include="ppm.hpp" />
     <ClInclude Include="benchmark.hpp" />
     <ClInclude Include="utilities.hpp" />
+    <ClInclude Include="blur.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lena.ppm">

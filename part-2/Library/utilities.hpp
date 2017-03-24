@@ -2,10 +2,11 @@
 #pragma once
 #pragma warning (disable: 4996)
 
-#include <cl/cl.hpp>
+#include <vector>
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 enum Channels { R, G, B };
 
@@ -50,25 +51,67 @@ auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
     return rgb;
 }
 
-auto kernel(const std::string& filename)
+#ifndef IGNORE_CL
+
+#include <Windows.h>
+#include <cl/cl.hpp>
+#include <CL/cl_gl_ext.h>
+
+auto findPlatform()
+{
+    return cl::Platform::getDefault();
+}
+
+cl::Context createContext(cl::Platform& platform, cl::Device& device, bool shared)
+{
+    const auto hGLRC = wglGetCurrentContext();
+    const auto hDC = wglGetCurrentDC();
+
+    cl_context_properties properties[] =
+    {
+        CL_CONTEXT_PLATFORM, (cl_context_properties)platform(),
+        CL_GL_CONTEXT_KHR, (cl_context_properties)hGLRC,
+        CL_WGL_HDC_KHR, (cl_context_properties)hDC,
+        0
+    };
+
+    return cl::Context(device, shared ? properties : nullptr);
+}
+
+cl::Device findDevice(cl::Platform& platform)
+{
+    std::vector<cl::Device> devices;
+    platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+    return devices.front();
+}
+
+auto createKernel(cl::Context& context, cl::Device& device, std::string filename)
 {
     std::ifstream file(filename);
     std::stringstream ss;
-    std::string str;
-    while (std::getline(file, str))
+    std::string src;
+
+    while (std::getline(file, src))
     {
-        ss << str << std::endl;
+        ss << src << std::endl;
     }
-    return ss.str();
-}
+    
+    src = ss.str();
+    
+    cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.size()));
+    cl::Program program(context, kernel);
 
-template<typename L, typename T>
-L clamp(T value)
-{
-    const auto min = std::numeric_limits<L>::min();
-    const auto max = std::numeric_limits<L>::max();
+    try
+    {
+        program.build();
+    }
+    catch (const cl::Error& e)
+    {
+        std::cerr << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
+        std::cin.get();
+    }
 
-    return static_cast<L>(value < min ? min : value > max ? max : value);
+    return program;
 }
 
 namespace cl {
@@ -79,6 +122,17 @@ namespace cl {
             sz[i] = numbers[i];
         return sz;
     }
+}
+
+#endif
+
+template<typename L, typename T>
+L clamp(T value)
+{
+    const auto minimum = std::numeric_limits<L>::min();
+    const auto maximum = std::numeric_limits<L>::max();
+
+    return static_cast<L>(value < minimum ? minimum : value > maximum ? maximum : value);
 }
 
 template<typename T>

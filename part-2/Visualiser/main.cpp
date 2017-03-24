@@ -1,44 +1,54 @@
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#pragma comment(lib, "glfw3.lib")
-
 #include "../library/utilities.hpp"
 #include "../library/benchmark.hpp"
+#include "../library/blur.hpp"
 #include "../library/ppm.hpp"
 
-#include <Windows.h>
-#include <iostream>
-#include <sstream>
-
 #include "glfw3.h"
-#include "glfw3native.h"
-#include <cl/cl.hpp>
-#include <CL/cl_gl_ext.h>
+
+#pragma comment(lib, "glfw3.lib")
 
 struct RenderWork
 {
+    std::pair<GLuint, cl::ImageGL> output;
+    std::pair<GLuint, cl::ImageGL> input;
     std::string filename;
-    GLuint textureID;
-    cl::ImageGL image;
+
+    cl::Buffer mask;
+    cl::Context context;
+    cl::NDRange global;
+    cl::NDRange local;
+
     ppm source;
     int radius;
 };
 
-RenderWork task{ "", 0, {}, {}, 3 };
-
-cl::Context context;
+RenderWork task;
 
 struct GLFWLibrary {
     GLFWLibrary() { glfwInit(); }
     ~GLFWLibrary() { glfwTerminate(); }
 };
 
-const auto onKeyDown = [](auto input, auto action, auto key, auto callback) {
-    if (input == key && action == GLFW_PRESS) {
+const auto onKeyDown = [](auto input, auto action, auto key, auto callback) 
+{
+    if (input == key && action == GLFW_PRESS)
+    {
         callback();
     }
 };
+
+void createSharedTexture(std::pair<GLuint, cl::ImageGL>& texturePair, int type, int w, int h, void* data)
+{
+    glBindTexture(GL_TEXTURE_2D, texturePair.first);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    texturePair.second = cl::ImageGL(task.context, type, GL_TEXTURE_2D, 0, texturePair.first);
+}
 
 void openFile()
 {
@@ -48,7 +58,7 @@ void openFile()
     ZeroMemory(&buffer, sizeof(buffer));
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
+    ofn.hwndOwner = GetDesktopWindow();  
     ofn.lpstrFilter = "PPM File\0*.ppm";
     ofn.lpstrFile = buffer;
     ofn.nMaxFile = MAX_PATH;
@@ -59,28 +69,36 @@ void openFile()
     {
         task.source.read(buffer);
         task.filename = buffer;
-       
+        task.global = cl::NDRange(task.source.w, task.source.h);
+        task.local = cl::NDRange(1, 1);
+
         auto rgba = rgb_to_rgba(task.source.data, task.source.w, task.source.h);
-
-        glBindTexture(GL_TEXTURE_2D, task.textureID);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, task.source.w, task.source.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-
-        task.image = cl::ImageGL(context, CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0, task.textureID, nullptr);
+        createSharedTexture(task.input, CL_MEM_READ_ONLY, task.source.w, task.source.h, rgba.data());
+        createSharedTexture(task.output, CL_MEM_WRITE_ONLY, task.source.w, task.source.h, nullptr);
     }
+}
+
+void generateMask(RenderWork& task)
+{
+    std::vector<float> mask = filter(task.radius, 5.0f);
+    task.mask = cl::Buffer(task.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, mask.size() * sizeof(float), mask.data());
 }
 
 void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    const auto radiusCopy = task.radius;
+
     onKeyDown(key, action, GLFW_KEY_ESCAPE, [&]() { glfwDestroyWindow(window); });
     onKeyDown(key, action, GLFW_KEY_DOWN, [&]() { task.radius--; });
     onKeyDown(key, action, GLFW_KEY_UP, [&]() { task.radius++; });
     onKeyDown(key, action, GLFW_KEY_O, [&]() { openFile(); });
 
-    task.radius = clamp(task.radius, 1, 150);
+    task.radius = clamp(task.radius, 0, 150);
+
+    if (task.radius != radiusCopy)
+    {
+        generateMask(task);
+    }
 }
 
 void onResize(GLFWwindow* window, int width, int height)
@@ -88,95 +106,78 @@ void onResize(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-int main(int argc, char* argv[])
+void updateTitle(GLFWwindow* window)
 {
-    std::string src = kernel("kernel.cl");
-    std::vector<cl::Device> devices;
+    auto lastBackSlash = task.filename.find_last_of("\\")+1;
+    auto rawFilename = task.filename.substr(lastBackSlash);
 
+    std::stringstream ss;
+    ss << "UnsharpFilter: ";
+    ss << "Radius = " << task.radius << ", ";
+    ss << "Filename = " << rawFilename;
+
+    glfwSetWindowTitle(window, ss.str().c_str());
+}
+
+int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR args, int cmdShow)
+{
     GLFWLibrary library;
-    const auto window = glfwCreateWindow(640, 480, "", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(640, 480, "", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, onKey);
     glfwSetWindowSizeCallback(window, onResize);
 
-    cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.length()));
-    cl::Platform p = cl::Platform::getDefault();
-    p.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-
-    auto hGLRC = wglGetCurrentContext();
-    auto hDC = wglGetCurrentDC();
-
-    cl_context_properties cps[] =
-    {
-        CL_CONTEXT_PLATFORM, (cl_context_properties)p(),
-        CL_GL_CONTEXT_KHR, (cl_context_properties)hGLRC,
-        CL_WGL_HDC_KHR, (cl_context_properties)hDC,
-        0
-    };
-
-    cl::Device device = devices.front();
-    context = cl::Context(device, cps);
+    cl::Platform platform = findPlatform();
+    cl::Device device = findDevice(platform);
+    cl::Context context = createContext(platform, device, true);
+    cl::Program program = createKernel(context, device, "../Gpu/kernels.cl");  
     cl::CommandQueue queue(context, device);
-    cl::Program program(context, kernel);
-
-    try
-    {
-        program.build();
-    }
-    catch (const cl::Error& e)
-    {
-        std::cerr << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
-    }
+    cl::Kernel imageKernel(program, "unsharp_mask");
 
     glEnable(GL_TEXTURE_2D);
-    glGenTextures(1, &task.textureID);
+    glGenTextures(1, &task.input.first);
+    glGenTextures(1, &task.output.first);
 
-    cl::Kernel imageKernel(program, "copy");
+    task.context = context;
+    task.radius = 3;
+    generateMask(task);
 
     while (!glfwWindowShouldClose(window))
     {
-        auto fn = task.filename;
-
-        std::stringstream ss;
-        ss << "UnsharpFilter: ";
-        ss << "Radius = " << task.radius << ", ";
-        ss << "Filename = " << fn.substr(fn.find_last_of("\\") + 1);
-
-        glfwSetWindowTitle(window, ss.str().c_str());
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.2f, 0.2, 0.2f, 0.2f);
 
-        if (!fn.empty() && task.textureID > 0)
+        if (!task.source.data.empty())
         {
-            clEnqueueAcquireGLObjects(queue(), 1, &task.image(), 0, 0, NULL);
+            std::vector<cl::Memory> objects{ task.input.second, task.output.second };
+            queue.enqueueAcquireGLObjects(&objects);
 
-            cl::size_t<3> region = cl::new_size_t<3>({ (int)task.source.w, (int)task.source.w, 1 });
-            cl::size_t<3> origin = cl::new_size_t<3>({ 0, 0, 0 });
-            cl::NDRange local(1, 1), global(task.source.w, task.source.h);
+            imageKernel.setArg(0, task.input.second());
+            imageKernel.setArg(1, task.output.second());
+            imageKernel.setArg(2, task.mask);
+            imageKernel.setArg(3, task.radius);
 
-            imageKernel.setArg(0, task.image());
+            queue.enqueueNDRangeKernel(imageKernel, cl::NullRange, task.global, task.local);
+            queue.enqueueReleaseGLObjects(&objects);
+            queue.finish();
 
-            queue.enqueueNDRangeKernel(imageKernel, cl::NullRange, global, local);
-            clEnqueueReleaseGLObjects(queue(), 1, &task.image(), 0, 0, NULL);
-          
             glBegin(GL_QUADS);
-            glBindTexture(GL_TEXTURE_2D, task.textureID);
-            glTexCoord2d(0.0, 0.0);
-            glVertex2d(-1.0, 1.0);
-            glTexCoord2d(1.0, 0.0);
-            glVertex2d(1.0, 1.0);
-            glTexCoord2d(1.0, 1.0);
-            glVertex2d(1.0, -1.0);
-            glTexCoord2d(0.0, 1.0);
-            glVertex2d(-1.0, -1.0);
+            glTexCoord2d(0.0, 0.0); glVertex2d(-1.0, 1.0);
+            glTexCoord2d(1.0, 0.0); glVertex2d(1.0, 1.0);
+            glTexCoord2d(1.0, 1.0); glVertex2d(1.0, -1.0);
+            glTexCoord2d(0.0, 1.0); glVertex2d(-1.0, -1.0);
             glEnd();
         }
         
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        updateTitle(window);
     }
 
+    glDeleteTextures(1, &task.input.first);
+    glDeleteTextures(1, &task.output.first);
+    glDisable(GL_TEXTURE_2D);
 
-    glDeleteTextures(1, &task.textureID);
     return EXIT_SUCCESS;
 }
