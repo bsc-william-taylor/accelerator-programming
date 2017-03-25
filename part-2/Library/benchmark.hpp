@@ -37,10 +37,10 @@ public:
 };
 
 template<unsigned times, typename Functor, typename... Args>
-void benchmark(Functor&& method, Args&&... args)
+void benchmark(const char* fn, Functor&& method, Args&&... args)
 {
     using namespace std::chrono;
-    csv<2> table("benchmark.csv", "Benchmark Results");
+    csv<2> table(fn, "Benchmark Results");
     table.append_row("ID, Time (ms)");
     
     auto total = 0.0, millseconds = 0.0;

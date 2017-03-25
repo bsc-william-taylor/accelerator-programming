@@ -8,7 +8,7 @@ float gaussian(float x, float mu, float sigma)
     return std::exp(-(((x - mu) / (sigma)) * ((x - mu) / (sigma))) / 2.0f);
 }
 
-std::vector<float> gaussianFilter(const int radius, const float weight = 1.0)
+std::vector<float> gaussianFilter(const int radius)
 {
     auto sigma = radius / 2.0f, sum = 0.0f;
     auto size = 2 * radius + 1;

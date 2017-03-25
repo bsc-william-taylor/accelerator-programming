@@ -80,25 +80,24 @@ void unsharp_mask(unsigned char *out, const unsigned char *in,
     blur(blur1.data(), in, blur_radius, w, h, nchannels);
     blur(blur2.data(), blur1.data(), blur_radius, w, h, nchannels);
     blur(blur3.data(), blur2.data(), blur_radius, w, h, nchannels);
+
     add_weighted(out, in, 1.5f, blur3.data(), -0.5f, 0.0f, w, h, nchannels);
 }
 
 int main(int argc, char *argv[])
 {
-    benchmark<1>([&]() {
-        const char *ifilename = argc > 1 ? argv[1] : "../library/lena.ppm";
-        const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
-        const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 5;
+    const char *ifilename = argc > 1 ? argv[1] : "../library/lena.ppm";
+    const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
+    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 5;
 
-        ppm img;
-        std::vector<unsigned char> data_sharp;
+    ppm img(ifilename);
+    std::vector<unsigned char> data_sharp(img.w * img.h * img.nchannels);
 
-        img.read(ifilename);
-        data_sharp.resize(img.w * img.h * img.nchannels);
+    benchmark<1>("cpu-benchmark.csv", [&]() {
         unsharp_mask(data_sharp.data(), img.data.data(), blur_radius, img.w, img.h, img.nchannels);
-        img.write(ofilename, data_sharp);
     });
 
+    img.write(ofilename, data_sharp);
     return 0;
 }
 

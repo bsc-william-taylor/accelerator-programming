@@ -1,5 +1,15 @@
 
-const sampler_t sampler =  CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+/*
+    When not passed as a command line 
+    option defaults are used
+*/
+#ifndef alpha
+    #define alpha 1.5
+    #define beta -0.5
+    #define gamma 0.0
+#endif
+
+const sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 
 kernel void unsharp_mask(
     read_only image2d_t input, 
@@ -9,10 +19,9 @@ kernel void unsharp_mask(
     const int2 pixel
 )
 {
-    const float alpha = 1.5, beta = -0.5, gamma = 0.0;
     const float4 colour = read_imagef(input, sampler, pixel);
 
-    float4 blurred = (float4)0.0;
+    float4 blurred = (float4)0.0f;
     int maskIndex = 0;
 
     for (int i = -radius; i <= radius; ++i)
@@ -25,7 +34,9 @@ kernel void unsharp_mask(
 	    }
     }
 
-    write_imagef(output, pixel, radius == 0 ? colour : (float4)(colour * alpha + blurred * beta + gamma));
+    const float4 sharpColour = (float4)(colour * alpha + blurred * beta + gamma);
+
+    write_imagef(output, pixel, radius == 0 ? colour : sharpColour);
 }
 
 kernel void unsharp_mask_sections(

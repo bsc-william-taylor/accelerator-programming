@@ -6,20 +6,20 @@
 
 int main(int argc, const char * argv[])
 {
-    benchmark<1>([&]{
-        const char *input = argc > 1 ? argv[1] : "../library/lena.ppm";
-        const char *output = argc > 2 ? argv[2] : "./out.ppm";
-        const int radius = argc > 3 ? std::atoi(argv[3]) : 5;
 
-        ppm image(input);
-        
-        auto rgba = rgb_to_rgba(image.data, image.w, image.h);
+    const char *input = argc > 1 ? argv[1] : "../library/lena.ppm";
+    const char *output = argc > 2 ? argv[2] : "./out.ppm";
+    const int radius = argc > 3 ? std::atoi(argv[3]) : 5;
 
+    ppm image(input);
+
+    auto rgba = rgb_to_rgba(image.data, image.w, image.h);
+    benchmark<1>("gpu-benchmark.csv", [&] {
         cl::Platform platform = findPlatform();
         cl::Device device = findDevice(platform);
         cl::Context context = cl::Context(device);
         cl::Program program = createKernel(context, device, "../Gpu/kernels.cl");
-  
+
         std::vector<float> mask = gaussianFilter(radius);
 
         cl::ImageFormat format{ CL_RGBA, CL_UNORM_INT8 };
@@ -32,7 +32,7 @@ int main(int argc, const char * argv[])
         cl::size_t<3> region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
         cl::size_t<3> origin = cl::new_size_t<3>({ 0, 0, 0 });
         cl::NDRange local(1, 1), global(image.w, image.h);
-      
+
         imageKernel.setArg(0, imageBuffer);
         imageKernel.setArg(1, outputBuffer);
         imageKernel.setArg(2, maskBuffer);
@@ -41,8 +41,8 @@ int main(int argc, const char * argv[])
         queue.enqueueNDRangeKernel(imageKernel, cl::NullRange, global, local);
         queue.enqueueReadImage(outputBuffer, CL_TRUE, origin, region, 0, 0, rgba.data());
         queue.finish();
-
-        image.write(output, rgb_from_rgba(rgba, image.w, image.h));
     });
+
+    image.write(output, rgb_from_rgba(rgba, image.w, image.h));
     return 0;
 }

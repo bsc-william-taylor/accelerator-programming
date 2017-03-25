@@ -126,7 +126,13 @@ auto createKernel(cl::Context& context, cl::Device& device, const char* filename
 
     try
     {
-        program.build();
+        std::stringstream options;
+        options << "-Dalpha=1.5 ";
+        options << "-Dgamma=0.0 ";
+        options << "-Dbeta=-0.5 ";
+        options << "-cl-unsafe-math-optimizations ";
+        options << "-cl-mad-enable ";
+        program.build(options.str().c_str());
     }
     catch (const cl::Error& e)
     {
