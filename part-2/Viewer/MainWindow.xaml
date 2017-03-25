@@ -13,9 +13,8 @@
         <ProgressBar Name="Progress" Minimum="0" Maximum="100" Value="0" Margin="0,561,0,0" />
         <Menu x:Name="menu" HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="594">
             <MenuItem Height="22" Header="Open" Click="ViewImage"></MenuItem>
-            <MenuItem Height="22" Header="Sharpen" Click="Run"></MenuItem>
-            <MenuItem Height="22" Header="Information" Click="About"></MenuItem>
-            <MenuItem Height="22" Header="Clear Cache" Click="ClearCache"></MenuItem>
+            <MenuItem Height="22" Header="Help" Click="About"></MenuItem>
+            <MenuItem Height="22" Header="Clear" Click="ClearCache"></MenuItem>
         </Menu>
         
     </Grid>

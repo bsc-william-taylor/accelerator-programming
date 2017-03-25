@@ -2,10 +2,12 @@
 using System.Windows.Media.Imaging;
 using System.IO;
 using System.Windows.Forms;
-using Forms = System.Windows.Forms;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System;
+using System.Text.RegularExpressions;
+using InputKey = System.Windows.Input.Key;
+using Forms = System.Windows.Forms;
 
 namespace Viewer
 {
@@ -72,27 +74,25 @@ namespace Viewer
             }
         }
 
-        private void Run(object sender, RoutedEventArgs e)
-        {
-            Forms.MessageBox.Show("Sharpen");
-        }
-
         private void About(object sender, RoutedEventArgs e)
         {
             var title = "Information";
-            var body = @"This a viewer app for PPM files.";
+            var body = Regex.Replace(@"
+                This is a viewer for PPM files. Use right and left arrows to cycle 
+                through loaded PPM files and press the clear menu item to unload all images.
+            ", @"\s+", " ");
 
             Forms.MessageBox.Show(body, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if(e.Key == System.Windows.Input.Key.Right && LoadedImageIndex + 1 < LoadedImages.Count)
+            if(e.Key == InputKey.Right && LoadedImageIndex + 1 < LoadedImages.Count)
             {
                 ImageView.Source = LoadedImages[++LoadedImageIndex];
             }
 
-            if (e.Key == System.Windows.Input.Key.Left && LoadedImageIndex-1 >= 0)
+            if (e.Key == InputKey.Left && LoadedImageIndex-1 >= 0)
             {
                 ImageView.Source = LoadedImages[--LoadedImageIndex];
             }
@@ -105,7 +105,7 @@ namespace Viewer
 
             BitmapImage bitmap = new BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri("http://placehold.it/600x620", UriKind.Absolute);
+            bitmap.UriSource = new Uri("http://placehold.it/600x620", UriKind.RelativeOrAbsolute);
             bitmap.EndInit();
 
             ImageView.Source = bitmap;

@@ -1,96 +1,104 @@
 
-#define IGNORE_CL
+#include "../Library/benchmark.hpp"
+#include "../Library/ppm.hpp"
 
-#include "../library/benchmark.hpp"
-#include "../Library/utilities.hpp"
-#include "../library/ppm.hpp"
+#include <climits>
 
-const auto set_colour = [](auto pixels, auto offset, auto r, auto g, auto b)
+// Calculates the weighted sum of two arrays, in1 and in2 according
+// to the formula: out(I) = saturate(in1(I)*alpha + in2(I)*beta + gamma)
+template <typename T>
+void add_weighted(unsigned char *out,
+    const unsigned char *in1, const T alpha,
+    const unsigned char *in2, const T  beta, const T gamma,
+    const unsigned w, const unsigned h, const unsigned nchannels)
 {
-    pixels[offset + R] = clamp<std::uint8_t>(r);
-    pixels[offset + G] = clamp<std::uint8_t>(g);
-    pixels[offset + B] = clamp<std::uint8_t>(b);
-};
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            unsigned byte_offset = (y*w + x)*nchannels;
 
-void pixel_average(std::uint8_t *out, std::uint8_t *in, int x, int y, int radius, int w, int h, int channels)
-{
-    auto samples = pow((radius * 2 - 1), 2);
-    auto r = 0.0f, g = 0.0f, b = 0.0f;
+            T tmp = in1[byte_offset + 0] * alpha + in2[byte_offset + 0] * beta + gamma;
+            out[byte_offset + 0] = tmp < 0 ? 0 : tmp > UCHAR_MAX ? UCHAR_MAX : tmp;
 
-    for (auto j = y - radius + 1; j < y + radius; ++j)
-    {
-        for (auto i = x - radius + 1; i < x + radius; ++i)
-        {
-            const auto x = clamp(i, 0, w), y = clamp(j, 0, h);
-            const auto offset = (y * w + x) * channels;
+            tmp = in1[byte_offset + 1] * alpha + in2[byte_offset + 1] * beta + gamma;
+            out[byte_offset + 1] = tmp < 0 ? 0 : tmp > UCHAR_MAX ? UCHAR_MAX : tmp;
 
-            r += in[offset + R];
-            g += in[offset + G];
-            b += in[offset + B];
-        }
-    }
-
-    const auto offset = (y * w + x) * channels;
-    set_colour(out, offset, r / samples, g / samples, b / samples);
-}
-
-void blur(std::uint8_t *out, std::uint8_t *in, int radius, int w, int h, int channels)
-{
-    for (auto y = 0; y < h; ++y)
-    {
-        for (auto x = 0; x < w; ++x)
-        {
-            pixel_average(out, in, x, y, radius, w, h, channels);
+            tmp = in1[byte_offset + 2] * alpha + in2[byte_offset + 2] * beta + gamma;
+            out[byte_offset + 2] = tmp < 0 ? 0 : tmp > UCHAR_MAX ? UCHAR_MAX : tmp;
         }
     }
 }
 
-void add_weighted(std::uint8_t *out, std::uint8_t *in1, std::uint8_t *in2, int w, int h, int nchannels)
+
+// Averages the nsamples pixels within blur_radius of (x,y). Pixels which
+// would be outside the image, replicate the value at the image border.
+void pixel_average(unsigned char *out,
+    const unsigned char *in,
+    const int x, const int y, const int blur_radius,
+    const unsigned w, const unsigned h, const unsigned nchannels)
 {
-    const auto alpha = 1.5, beta = -0.5, gamma = 0.0;
-    const auto weight = [&](auto colour, auto offset)
-    {
-        return in1[offset + colour] * alpha + in2[offset + colour] * beta + gamma;
-    };
+    float red_total = 0, green_total = 0, blue_total = 0;
+    const unsigned nsamples = (blur_radius * 2 - 1) * (blur_radius * 2 - 1);
+    for (int j = y - blur_radius + 1; j < y + blur_radius; ++j) {
+        for (int i = x - blur_radius + 1; i < x + blur_radius; ++i) {
+            const unsigned r_i = i < 0 ? 0 : i >= w ? w - 1 : i;
+            const unsigned r_j = j < 0 ? 0 : j >= h ? h - 1 : j;
+            unsigned byte_offset = (r_j*w + r_i)*nchannels;
+            red_total += in[byte_offset + 0];
+            green_total += in[byte_offset + 1];
+            blue_total += in[byte_offset + 2];
+        }
+    }
 
-    for (int y = 0; y < h; ++y)
-    {
-        for (int x = 0; x < w; ++x)
-        {
-            auto offset = (y * w + x) * nchannels;
-            auto r = weight(R, offset);
-            auto g = weight(G, offset);
-            auto b = weight(B, offset);
+    unsigned byte_offset = (y*w + x)*nchannels;
+    out[byte_offset + 0] = red_total / nsamples;
+    out[byte_offset + 1] = green_total / nsamples;
+    out[byte_offset + 2] = blue_total / nsamples;
+}
 
-            set_colour(out, offset, r, g, b);
+void blur(unsigned char *out, const unsigned char *in,
+    const int blur_radius,
+    const unsigned w, const unsigned h, const unsigned nchannels)
+{
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            pixel_average(out, in, x, y, blur_radius, w, h, nchannels);
         }
     }
 }
 
-void unsharp_mask(std::uint8_t *out, std::uint8_t *in, int radius, int w, int h, int channels)
+
+void unsharp_mask(unsigned char *out, const unsigned char *in,
+    const int blur_radius,
+    const unsigned w, const unsigned h, const unsigned nchannels)
 {
-    const auto size = w * h * channels;
-    std::vector<std::uint8_t> blur1(size), blur2(size), blur3(size);
+    std::vector<unsigned char> blur1, blur2, blur3;
 
-    blur(blur1.data(), in, radius, w, h, channels);
-    blur(blur2.data(), blur1.data(), radius, w, h, channels);
-    blur(out, blur2.data(), radius, w, h, channels);
+    blur1.resize(w * h * nchannels);
+    blur2.resize(w * h * nchannels);
+    blur3.resize(w * h * nchannels);
 
-    add_weighted(out, in, blur3.data(), w, h, channels);
+    blur(blur1.data(), in, blur_radius, w, h, nchannels);
+    blur(blur2.data(), blur1.data(), blur_radius, w, h, nchannels);
+    blur(blur3.data(), blur2.data(), blur_radius, w, h, nchannels);
+    add_weighted(out, in, 1.5f, blur3.data(), -0.5f, 0.0f, w, h, nchannels);
 }
 
 int main(int argc, char *argv[])
 {
-    auto radius = std::atoi(arg(argc, argv, 3, "3"));
-    auto output = arg(argc, argv, 2, "./out.ppm");
-    auto input = arg(argc, argv, 1, "../library/lena.ppm");
+    benchmark<1>([&]() {
+        const char *ifilename = argc > 1 ? argv[1] : "../library/lena.ppm";
+        const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
+        const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 5;
 
-    ppm image(input);
+        ppm img;
+        std::vector<unsigned char> data_sharp;
 
-    std::vector<std::uint8_t> data_sharp(image.w * image.h * image.nchannels);
-    unsharp_mask(data_sharp.data(), image.data.data(), radius, image.w, image.h, image.nchannels);
-    image.write(output, data_sharp);
-    
+        img.read(ifilename);
+        data_sharp.resize(img.w * img.h * img.nchannels);
+        unsharp_mask(data_sharp.data(), img.data.data(), blur_radius, img.w, img.h, img.nchannels);
+        img.write(ofilename, data_sharp);
+    });
+
     return 0;
 }
 

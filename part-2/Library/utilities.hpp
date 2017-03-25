@@ -8,11 +8,11 @@
 #include <sstream>
 #include <iostream>
 
-enum Channels { R, G, B };
+enum Channels { R, G, B, A };
 
 auto rgb_to_rgba(std::vector<std::uint8_t>& rgb, int width, int height)
 {
-    std::vector<std::uint8_t> rgba(width*height * 4);
+    std::vector<std::uint8_t> rgba(width * height * 4);
 
     for (int y = 0; y < height; ++y)
     {
@@ -21,10 +21,10 @@ auto rgb_to_rgba(std::vector<std::uint8_t>& rgb, int width, int height)
             auto rgb_index = (y * width + x) * 3;
             auto rgba_index = (y * width + x) * 4;
 
-            rgba[rgba_index + 0] = rgb[rgb_index + 0];
-            rgba[rgba_index + 1] = rgb[rgb_index + 1];
-            rgba[rgba_index + 2] = rgb[rgb_index + 2];
-            rgba[rgba_index + 3] = 255;
+            rgba[rgba_index + R] = rgb[rgb_index + R];
+            rgba[rgba_index + G] = rgb[rgb_index + G];
+            rgba[rgba_index + B] = rgb[rgb_index + B];
+            rgba[rgba_index + A] = 255;
         }
     }
 
@@ -42,9 +42,9 @@ auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
             auto rgb_index = (y * width + x) * 3;
             auto rgba_index = (y * width + x) * 4;
 
-            rgb[rgb_index + 0] = rgba[rgba_index + 0];
-            rgb[rgb_index + 1] = rgba[rgba_index + 1];
-            rgb[rgb_index + 2] = rgba[rgba_index + 2];
+            rgb[rgb_index + R] = rgba[rgba_index + R];
+            rgb[rgb_index + G] = rgba[rgba_index + G];
+            rgb[rgb_index + B] = rgba[rgba_index + B];
         }
     }
 
@@ -85,7 +85,7 @@ cl::Device findDevice(cl::Platform& platform)
     return devices.front();
 }
 
-auto createKernel(cl::Context& context, cl::Device& device, std::string filename)
+auto createKernel(cl::Context& context, cl::Device& device, const char* filename)
 {
     std::ifstream file(filename);
     std::stringstream ss;
@@ -116,7 +116,7 @@ auto createKernel(cl::Context& context, cl::Device& device, std::string filename
 
 namespace cl {
     template<int L>
-    cl::size_t<L> new_size_t(std::vector<int> numbers) {
+    cl::size_t<L> new_size_t(const std::vector<int>& numbers) {
         cl::size_t<L> sz;
         for (int i = 0; i < L; i++)
             sz[i] = numbers[i];
