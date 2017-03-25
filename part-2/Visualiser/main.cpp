@@ -3,10 +3,7 @@
 #include "../library/benchmark.hpp"
 #include "../library/blur.hpp"
 #include "../library/ppm.hpp"
-
-#include "glfw3.h"
-
-#pragma comment(lib, "glfw3.lib")
+#include "../library/glfw3.h"
 
 struct RenderWork
 {
@@ -156,7 +153,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR args, int cmdShow)
     while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(0.2f, 0.2, 0.2f, 0.2f);
+        glClearColor(0.2f, 0.2f, 0.2f, 0.2f);
 
         if (!task.source.data.empty())
         {

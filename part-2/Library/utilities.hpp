@@ -1,6 +1,9 @@
 
 #pragma once
+
 #pragma warning (disable: 4996)
+#pragma warning (disable: 4018)
+#pragma warning (disable: 4244)
 
 #include <vector>
 #include <string>
@@ -50,6 +53,26 @@ auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
 
     return rgb;
 }
+
+template<typename L, typename T>
+L clamp(T value)
+{
+    const auto minimum = std::numeric_limits<L>::min();
+    const auto maximum = std::numeric_limits<L>::max();
+
+    return static_cast<L>(value < minimum ? minimum : value > maximum ? maximum : value);
+}
+
+template<typename T>
+T clamp(T value, T min, T max)
+{
+    return value < min ? min : value >= max ? max - 1 : value;
+}
+
+const auto arg = [](auto argc, auto argv, auto index, auto value)
+{
+    return argc > index ? argv[index] : value;
+};
 
 #ifndef IGNORE_CL
 
@@ -107,7 +130,11 @@ auto createKernel(cl::Context& context, cl::Device& device, const char* filename
     }
     catch (const cl::Error& e)
     {
-        std::cerr << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
+        std::cerr 
+            << "cl::Program Build Error "
+            << e.what()
+            << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) 
+            << std::endl;
         std::cin.get();
     }
 
@@ -125,23 +152,3 @@ namespace cl {
 }
 
 #endif
-
-template<typename L, typename T>
-L clamp(T value)
-{
-    const auto minimum = std::numeric_limits<L>::min();
-    const auto maximum = std::numeric_limits<L>::max();
-
-    return static_cast<L>(value < minimum ? minimum : value > maximum ? maximum : value);
-}
-
-template<typename T>
-T clamp(T value, T min, T max)
-{
-    return value < min ? min : value >= max ? max - 1 : value;
-}
-
-const auto arg = [](auto argc, auto argv, auto index, auto value)
-{
-    return argc > index ? argv[index] : value;
-};
