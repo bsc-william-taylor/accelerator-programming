@@ -10,7 +10,7 @@ namespace Viewer
     public partial class App : Application
     {
         public static string GetByte(char[] bytes, ref int pointer, StringBuilder builder)
-        {   
+        {
             while (true)
             {
                 char temp = bytes[++pointer];
@@ -54,7 +54,7 @@ namespace Viewer
                 {
                     for (int x = 0; x < width; ++x)
                     {
-                        try 
+                        try
                         {
                             var r = int.Parse(GetByte(bytes, ref bufferPosition, builder));
                             var g = int.Parse(GetByte(bytes, ref bufferPosition, builder));
@@ -62,7 +62,7 @@ namespace Viewer
 
                             bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
                         }
-                        catch(Exception e)
+                        catch (Exception e)
                         {
                             MessageBox.Show($"Error reading at pixel -> {x}:{y}");
                         }

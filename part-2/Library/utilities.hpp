@@ -10,10 +10,11 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <functional>
 
 enum Channels { R, G, B, A };
 
-auto rgb_to_rgba(std::vector<std::uint8_t>& rgb, int width, int height)
+inline std::vector<std::uint8_t> rgb_to_rgba(std::vector<std::uint8_t>& rgb, int width, int height)
 {
     std::vector<std::uint8_t> rgba(width * height * 4);
 
@@ -34,7 +35,7 @@ auto rgb_to_rgba(std::vector<std::uint8_t>& rgb, int width, int height)
     return rgba;
 }
 
-auto rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
+inline std::vector<std::uint8_t> rgb_from_rgba(std::vector<std::uint8_t>& rgba, int width, int height)
 {
     std::vector<std::uint8_t> rgb(width*height * 3);
 
@@ -69,23 +70,18 @@ T clamp(T value, T min, T max)
     return value < min ? min : value >= max ? max - 1 : value;
 }
 
-const auto arg = [](auto argc, auto argv, auto index, auto value)
-{
-    return argc > index ? argv[index] : value;
-};
-
 #ifndef IGNORE_CL
 
 #include <Windows.h>
 #include <cl/cl.hpp>
 #include <CL/cl_gl_ext.h>
 
-auto findPlatform()
+inline cl::Platform findPlatform()
 {
     return cl::Platform::getDefault();
 }
 
-cl::Context createContext(cl::Platform& platform, cl::Device& device, bool shared)
+inline cl::Context createContext(cl::Platform& platform, cl::Device& device, bool shared)
 {
     const auto hGLRC = wglGetCurrentContext();
     const auto hDC = wglGetCurrentDC();
@@ -101,14 +97,14 @@ cl::Context createContext(cl::Platform& platform, cl::Device& device, bool share
     return cl::Context(device, shared ? properties : nullptr);
 }
 
-cl::Device findDevice(cl::Platform& platform)
+inline cl::Device findDevice(cl::Platform& platform)
 {
     std::vector<cl::Device> devices;
     platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
     return devices.front();
 }
 
-auto createKernel(cl::Context& context, cl::Device& device, const char* filename)
+inline cl::Program createKernel(cl::Context& context, cl::Device& device, const char* filename)
 {
     std::ifstream file(filename);
     std::stringstream ss;

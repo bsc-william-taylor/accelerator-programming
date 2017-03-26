@@ -26,8 +26,8 @@ namespace Viewer
             var fileDialog = new OpenFileDialog();
             fileDialog.Multiselect = false;
             fileDialog.Filter = "PPM|*.ppm";
-            
-            if(fileDialog.ShowDialog() == Forms.DialogResult.OK)
+
+            if (fileDialog.ShowDialog() == Forms.DialogResult.OK)
             {
                 BackgroundWorker worker = new BackgroundWorker();
                 worker.WorkerReportsProgress = true;
@@ -87,12 +87,12 @@ namespace Viewer
 
         private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if(e.Key == InputKey.Right && LoadedImageIndex + 1 < LoadedImages.Count)
+            if (e.Key == InputKey.Right && LoadedImageIndex + 1 < LoadedImages.Count)
             {
                 ImageView.Source = LoadedImages[++LoadedImageIndex];
             }
 
-            if (e.Key == InputKey.Left && LoadedImageIndex-1 >= 0)
+            if (e.Key == InputKey.Left && LoadedImageIndex - 1 >= 0)
             {
                 ImageView.Source = LoadedImages[--LoadedImageIndex];
             }

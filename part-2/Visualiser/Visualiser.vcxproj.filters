@@ -1,6 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="app.cpp">
+      <Filter>App</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="gui.cpp">
+      <Filter>Gui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="app.h">
+      <Filter>App</Filter>
+    </ClInclude>
+    <ClInclude Include="gui.h">
+      <Filter>Gui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="App">
+      <UniqueIdentifier>{f72939d4-8ded-43ea-bdec-687af56835e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gui">
+      <UniqueIdentifier>{43bb369f-af14-4256-a72e-784778480c44}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

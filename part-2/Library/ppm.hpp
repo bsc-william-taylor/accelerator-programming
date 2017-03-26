@@ -61,7 +61,7 @@ struct ppm {
 };
 
 // http://insanecoding.blogspot.co.uk/2011/11/how-to-read-in-file-in-c.html
-std::string get_file_contents(const char *filename)
+inline std::string get_file_contents(const char *filename)
 {
     std::ifstream in(filename, std::ios::in);
     if (in)
