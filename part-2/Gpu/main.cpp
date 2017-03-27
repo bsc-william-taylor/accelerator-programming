@@ -8,7 +8,7 @@ int main(int argc, const char * argv[])
 {
     const auto input = argc > 1 ? argv[1] : "../library/lena.ppm";
     const auto output = argc > 2 ? argv[2] : "./out.ppm";
-    const auto radius = argc > 3 ? std::atoi(argv[3]) : 5;
+    const auto radius = argc > 3 ? std::atoi(argv[3]) : 9;
 
     ppm image(input);
     auto rgba = rgb_to_rgba(image.data, image.w, image.h);

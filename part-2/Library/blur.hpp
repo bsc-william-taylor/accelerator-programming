@@ -11,11 +11,9 @@ inline float gaussian(float x, float mu, float sigma)
 inline std::vector<float> gaussianFilter(const int radius)
 {
     auto sigma = radius / 2.0f, sum = 0.0f;
-    auto size = 2 * radius + 1;
-
     std::vector<float> kernel;
-    for (int row = 0; row < size; row++) {
-        for (int col = 0; col < size; col++) {
+    for (int row = 0; row < radius; row++) {
+        for (int col = 0; col < radius; col++) {
             float x = gaussian(row, radius, sigma) * gaussian(col, radius, sigma);
             kernel.push_back(x);
             sum += x;
