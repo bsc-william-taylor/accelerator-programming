@@ -38,3 +38,6 @@ ipch/
 Release
 Debug
 .vs
+
+# Misc
+*.DS_Store
