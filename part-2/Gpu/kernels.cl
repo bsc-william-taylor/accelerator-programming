@@ -12,33 +12,28 @@
 const sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 
 kernel void unsharp_mask(
-    read_only image2d_t input, 
-    write_only image2d_t output, 
+    read_only image2d_t in, 
+    write_only image2d_t out, 
     constant float* mask, 
     const int radius,
-    const int2 pixel
+    const int2 px
 )
 {
-    const float4 colour = read_imagef(input, sampler, pixel);   
-    const float PI = 3.14159265359f;
     float4 blurred = (float4)0.0f;
-    int rs = ceil(radius * 2.57);
-    float sum = 0.0;
+    int index = 0;
 
-    for(int iy = pixel.y-rs; iy <= pixel.y+rs; ++iy) { 
-        for(int ix = pixel.x-rs; ix <= pixel.x+rs; ++ix) {
-            float distance = (ix - pixel.x) * (ix - pixel.x) + (iy - pixel.y) * (iy - pixel.y);
-            float weight = exp(-distance / (2 * radius * radius)) / (PI * 2 * radius * radius);
-		    blurred += read_imagef(input, sampler, (int2)(ix, iy)) * weight;
-            sum += weight;
+    for(int y = -radius; y <= radius; ++y) 
+    { 
+        for(int x = -radius; x <= radius; ++x)
+        {
+		    blurred += read_imagef(in, sampler, (int2)(px.x + x, px.y + y)) * mask[index++];
         }
      }
 
-    blurred /= sum;
-
+    const float4 colour = read_imagef(in, sampler, px);   
     const float4 sharpColour = (float4)(colour * alpha + blurred * beta + gamma);
 
-    write_imagef(output, pixel, radius == 0 ? colour : sharpColour);
+    write_imagef(out, px, radius == 0 ? colour : sharpColour);
 }
 
 kernel void unsharp_mask_sections(

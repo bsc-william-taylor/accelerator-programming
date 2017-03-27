@@ -67,7 +67,7 @@ void App::updateTexture()
         kernel.setArg(0, inputCL);
         kernel.setArg(1, outputCL);
         kernel.setArg(2, maskBuffer);
-        kernel.setArg(3, radius);
+        kernel.setArg(3, (int)ceil(radius * 2.57));
         kernel.setArg(4, offsetX);
         kernel.setArg(5, offsetY);
 
@@ -75,7 +75,7 @@ void App::updateTexture()
         queue.enqueueReleaseGLObjects(&objects);
         queue.finish();
 
-        offsetX += source.w / 10;
+        offsetX += source.w  / 10;
 
         if (offsetX >= source.w) 
         {

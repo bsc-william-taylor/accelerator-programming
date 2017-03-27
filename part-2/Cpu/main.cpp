@@ -79,16 +79,16 @@ void unsharp_mask(unsigned char *out, const unsigned char *in,
 
     blur(blur1.data(), in, blur_radius, w, h, nchannels);
     blur(blur2.data(), blur1.data(), blur_radius, w, h, nchannels);
-    blur(out, blur2.data(), blur_radius, w, h, nchannels);
+    blur(blur3.data(), blur2.data(), blur_radius, w, h, nchannels);
 
-    //add_weighted(out, in, 1.5f, blur3.data(), -0.5f, 0.0f, w, h, nchannels);
+    add_weighted(out, in, 1.5f, blur3.data(), -0.5f, 0.0f, w, h, nchannels);
 }
 
 int main(int argc, char *argv[])
 {
     const char *ifilename = argc > 1 ? argv[1] : "../library/lena.ppm";
     const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
-    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 9;
+    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 19;
 
     ppm img(ifilename);
     std::vector<unsigned char> data_sharp(img.w * img.h * img.nchannels);
