@@ -104,7 +104,7 @@ inline cl::Device findDevice(cl::Platform& platform)
     return devices.front();
 }
 
-inline cl::Program createKernel(cl::Context& context, cl::Device& device, const char* filename)
+inline cl::Program createKernel(cl::Context& context, cl::Device& device, const char* filename, std::function<std::string()> options)
 {
     std::ifstream file(filename);
     std::stringstream ss;
@@ -122,13 +122,7 @@ inline cl::Program createKernel(cl::Context& context, cl::Device& device, const 
 
     try
     {
-        std::stringstream options;
-        options << "-Dalpha=1.5 ";
-        options << "-Dgamma=0.0 ";
-        options << "-Dbeta=-0.5 ";
-        options << "-cl-unsafe-math-optimizations ";
-        options << "-cl-mad-enable ";
-        program.build(options.str().c_str());
+        program.build(options().c_str());
     }
     catch (const cl::Error& e)
     {
@@ -137,7 +131,6 @@ inline cl::Program createKernel(cl::Context& context, cl::Device& device, const 
             << e.what()
             << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) 
             << std::endl;
-        std::cin.get();
     }
 
     return program;

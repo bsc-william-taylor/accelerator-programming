@@ -3,9 +3,7 @@
 #include "App.h"
 
 App::App() :
-    platform(findPlatform()),
-    device(findDevice(platform)),
-    radius(3)
+    radius(5), step(16), alpha(1.5), beta(0), gamma(-0.5)
 {
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &inputID);
@@ -34,11 +32,28 @@ void App::setupTexture(GLuint& textureID, cl::ImageGL& imageGL, int type, int w,
 
 void App::setupOpenCL() 
 {
+    platform = findPlatform();
+    device = findDevice(platform);
     context = createContext(platform, device, true);
-    program = createKernel(context, device, "../Gpu/kernels.cl");
+    queue = cl::CommandQueue(context, device);
+
+    updateProgram();
+}
+
+void App::updateProgram()
+{
+    program = createKernel(context, device, "../Gpu/kernels.cl", [&]() {
+        std::stringstream options;
+        options << " -Dalpha=" << 1.5;
+        options << " -Dgamma=" << 0.0;
+        options << " -Dbeta=" << -0.5;
+        options << " -Dradius=" << (int)ceil(radius * 2.57);
+        options << " -cl-unsafe-math-optimizations ";
+        options << " -cl-mad-enable ";
+        return options.str();
+    });
 
     kernel = cl::Kernel(program, "unsharp_mask_sections");
-    queue = cl::CommandQueue(context, device);
 }
 
 void App::setupMask(bool refreshOutput)
@@ -46,20 +61,21 @@ void App::setupMask(bool refreshOutput)
     offsetX = 0;
     offsetY = 0;
 
-    auto mask = gaussianFilter((radius = clamp(radius, 0, 64)));
+    auto mask = gaussianFilter(radius);
     auto size = mask.size() * sizeof(float);
 
     maskBuffer = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size, mask.data());
 
     if (refreshOutput && !filename.empty())
     {
+        updateProgram();
         setupTexture(outputID, outputCL, CL_MEM_WRITE_ONLY, source.w, source.h, nullptr);
     }
 }
 
 void App::updateTexture() 
 {
-    if (hasImage() && offsetX <= source.w && offsetY <= source.h)
+    if (hasImage() && offsetX < source.w && offsetY < source.h)
     {
         std::vector<cl::Memory> objects{ inputCL, outputCL };
         queue.enqueueAcquireGLObjects(&objects);
@@ -67,19 +83,18 @@ void App::updateTexture()
         kernel.setArg(0, inputCL);
         kernel.setArg(1, outputCL);
         kernel.setArg(2, maskBuffer);
-        kernel.setArg(3, (int)ceil(radius * 2.57));
-        kernel.setArg(4, offsetX);
-        kernel.setArg(5, offsetY);
+        kernel.setArg(3, offsetX);
+        kernel.setArg(4, offsetY);
 
         queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local);
         queue.enqueueReleaseGLObjects(&objects);
         queue.finish();
 
-        offsetX += source.w  / 10;
+        offsetX += source.w  / step;
 
         if (offsetX >= source.w) 
         {
-            offsetY += source.h / 10;
+            offsetY += source.h / step;
             offsetX = 0;
         }
     }
@@ -130,7 +145,7 @@ void App::updateFile()
     {
         source.read(buffer);
         filename = buffer;
-        global = cl::NDRange(source.w / 10, source.h / 10);
+        global = cl::NDRange(source.w / step, source.h / step);
         local = cl::NDRange(1, 1);
 
         auto rgba = rgb_to_rgba(source.data, source.w, source.h);

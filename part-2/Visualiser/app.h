@@ -20,7 +20,8 @@ class App
     cl::Device device;
     cl::Kernel kernel;
     
-    int offsetX, offsetY, radius;
+    int offsetX, offsetY, radius, step;
+    double alpha, beta, gamma;
     GLuint outputID, inputID;
     std::string filename;
     ppm source;
@@ -34,6 +35,7 @@ public:
 
     bool hasImage();
 
+    void updateProgram();
     void updateTexture();
     void updateRadius(int increase);
     void updateFile();

@@ -14,11 +14,6 @@ Gui::Gui(std::string title)
     {
         auto display = static_cast<Gui*>(glfwGetWindowUserPointer(win));
 
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        {
-            glfwDestroyWindow(display->window);
-        }
-
         if (display->keyHandler != nullptr)
         {
             display->keyHandler(key, action);
@@ -35,7 +30,6 @@ void Gui::title(std::string title)
 {
     glfwSetWindowTitle(window, title.c_str());
 }
-
 
 void Gui::quad(float size)
 {

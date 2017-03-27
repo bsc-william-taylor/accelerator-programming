@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 {
     const char *ifilename = argc > 1 ? argv[1] : "../library/lena.ppm";
     const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
-    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 19;
+    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 3;
 
     ppm img(ifilename);
     std::vector<unsigned char> data_sharp(img.w * img.h * img.nchannels);
