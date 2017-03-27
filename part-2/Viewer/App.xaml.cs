@@ -62,7 +62,7 @@ namespace Viewer
 
                             bitmap.SetPixel(x, y, Color.FromArgb(r, g, b));
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             MessageBox.Show($"Error reading at pixel -> {x}:{y}");
                         }

@@ -1,8 +1,9 @@
 
 #pragma once
 
-#include "../library/utilities.hpp"
-#include "../library/glfw3.h"
+#include "../Library/misc.hpp"
+#include "../Library/glfw3.h"
+#include "../Library/clu.hpp"
 
 class Gui
 {

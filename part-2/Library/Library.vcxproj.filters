@@ -3,8 +3,9 @@
   <ItemGroup>
     <ClInclude Include="ppm.hpp" />
     <ClInclude Include="benchmark.hpp" />
-    <ClInclude Include="utilities.hpp" />
     <ClInclude Include="blur.hpp" />
+    <ClInclude Include="clu.hpp" />
+    <ClInclude Include="misc.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="lena.ppm">

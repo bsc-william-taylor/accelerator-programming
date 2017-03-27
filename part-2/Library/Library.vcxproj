@@ -112,8 +112,9 @@
   <ItemGroup>
     <ClInclude Include="benchmark.hpp" />
     <ClInclude Include="blur.hpp" />
+    <ClInclude Include="misc.hpp" />
     <ClInclude Include="ppm.hpp" />
-    <ClInclude Include="utilities.hpp" />
+    <ClInclude Include="clu.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ghost-town-8k.ppm" />

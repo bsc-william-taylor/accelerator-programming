@@ -60,7 +60,9 @@ kernel void unsharp_mask_pass_two(
 		blurred += read_imagef(input, sampler, (int2)(x, y + i)) * (float4)vert[index++];
     }
 
-    write_imagef(output, (int2)(x, y), (float4)(colour * alpha + blurred * beta + gamma));
+    const float4 sharp = (float4)(colour * alpha + blurred * beta + gamma);
+
+    write_imagef(output, (int2)(x, y), radius == 0 ? colour : sharp);
 }
 
 kernel void unsharp_mask(
@@ -82,9 +84,9 @@ kernel void unsharp_mask(
      }
 
     const float4 colour = read_imagef(in, sampler, px);   
-    const float4 sharpColour = (float4)(colour * alpha + blurred * beta + gamma);
+    const float4 sharp = (float4)(colour * alpha + blurred * beta + gamma);
 
-    write_imagef(out, px, radius == 0 ? colour : sharpColour);
+    write_imagef(out, px, radius == 0 ? colour : sharp);
 }
 
 kernel void unsharp_mask_sections(

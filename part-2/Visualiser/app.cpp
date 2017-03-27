@@ -3,11 +3,12 @@
 #include "App.h"
 
 App::App() :
-    radius(5), step(16), alpha(1.5), beta(0), gamma(-0.5)
+    radius(5), outputted(false)
 {
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &inputID);
     glGenTextures(1, &outputID);
+    glGenTextures(1, &bufferID);
 }
 
 
@@ -15,6 +16,7 @@ App::~App()
 {
     glDeleteTextures(1, &inputID);
     glDeleteTextures(1, &outputID);
+    glDeleteTextures(1, &bufferID);
     glDisable(GL_TEXTURE_2D);
 }
 
@@ -32,9 +34,9 @@ void App::setupTexture(GLuint& textureID, cl::ImageGL& imageGL, int type, int w,
 
 void App::setupOpenCL() 
 {
-    platform = findPlatform();
-    device = findDevice(platform);
-    context = createContext(platform, device, true);
+    platform = cl::Platform::get();
+    device = getDevice(platform);
+    context = getContext(platform, device, true);
     queue = cl::CommandQueue(context, device);
 
     updateProgram();
@@ -42,7 +44,7 @@ void App::setupOpenCL()
 
 void App::updateProgram()
 {
-    program = createKernel(context, device, "../Gpu/kernels.cl", [&]() {
+    program = getKernel(context, device, "../Gpu/kernels.cl", [&]() {
         std::stringstream options;
         options << " -Dalpha=" << 1.5;
         options << " -Dgamma=" << 0.0;
@@ -58,10 +60,7 @@ void App::updateProgram()
 
 void App::setupMask(bool refreshOutput)
 {
-    offsetX = 0;
-    offsetY = 0;
-
-    auto mask = gaussianFilter(radius);
+    auto mask = gaussianFilter1D(radius = clamp(radius, 0, 150));
     auto size = mask.size() * sizeof(float);
 
     maskBuffer = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size, mask.data());
@@ -75,28 +74,28 @@ void App::setupMask(bool refreshOutput)
 
 void App::updateTexture() 
 {
-    if (hasImage() && offsetX < source.w && offsetY < source.h)
+    if (hasImage() && !outputted)
     {
         std::vector<cl::Memory> objects{ inputCL, outputCL };
         queue.enqueueAcquireGLObjects(&objects);
 
-        kernel.setArg(0, inputCL);
-        kernel.setArg(1, outputCL);
-        kernel.setArg(2, maskBuffer);
-        kernel.setArg(3, offsetX);
-        kernel.setArg(4, offsetY);
+        cl::Kernel first(program, "unsharp_mask_pass_one");
+        first.setArg(0, inputCL);
+        first.setArg(1, bufferCL);
+        first.setArg(2, maskBuffer);
 
-        queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local);
-        queue.enqueueReleaseGLObjects(&objects);
+        queue.enqueueNDRangeKernel(first, cl::NullRange, { source.w, source.h }, cl::NullRange);
         queue.finish();
 
-        offsetX += source.w  / step;
+        cl::Kernel second(program, "unsharp_mask_pass_two");
+        second.setArg(0, inputCL);
+        second.setArg(1, bufferCL);
+        second.setArg(2, outputCL);
+        second.setArg(3, maskBuffer);
 
-        if (offsetX >= source.w) 
-        {
-            offsetY += source.h / step;
-            offsetX = 0;
-        }
+        queue.enqueueNDRangeKernel(second, cl::NullRange, { source.w, source.h }, cl::NullRange);
+        queue.finish();
+        outputted = true;
     }
 }
 
@@ -120,6 +119,7 @@ void App::updateRadius(int increase)
         radius += increase;
     } while (radius % 2 == 0);
 
+    outputted = false;
     setupMask(true);
 }
 
@@ -145,11 +145,11 @@ void App::updateFile()
     {
         source.read(buffer);
         filename = buffer;
-        global = cl::NDRange(source.w / step, source.h / step);
-        local = cl::NDRange(1, 1);
+        global = cl::NDRange(source.w, source.h);
 
-        auto rgba = rgb_to_rgba(source.data, source.w, source.h);
+        auto rgba = toRGBA(source.data, source.w, source.h);
         setupTexture(inputID, inputCL, CL_MEM_READ_ONLY, source.w, source.h, rgba.data());
+        setupTexture(bufferID, bufferCL, CL_MEM_READ_WRITE, source.w, source.h, nullptr);
         setupTexture(outputID, outputCL, CL_MEM_WRITE_ONLY, source.w, source.h, nullptr);
     }
 }

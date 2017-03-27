@@ -1,8 +1,9 @@
 
 #include "../library/benchmark.hpp"
-#include "../library/utilities.hpp"
 #include "../Library/blur.hpp"
-#include "../library/ppm.hpp"
+#include "../Library/misc.hpp"
+#include "../Library/clu.hpp"
+#include "../Library/ppm.hpp"
 
 int main(int argc, const char * argv[])
 {
@@ -12,23 +13,22 @@ int main(int argc, const char * argv[])
 
     ppm image(input);
 
-    auto rgba = rgb_to_rgba(image.data, image.w, image.h);
+    auto rgba = toRGBA(image.data, image.w, image.h);
     auto gaussianMask = gaussianFilter1D(radius);
     auto gaussianSize = gaussianMask.size() * sizeof(float);
+    auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
     auto region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
     auto origin = cl::new_size_t<3>({ 0, 0, 0 });
-    auto flags = cl_mem_flags{ CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR };
-    auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
 
-    cl::Platform platform = findPlatform();
-    cl::Device device = findDevice(platform);
-    cl::Context context = cl::Context(device);
+    cl::Platform platform = cl::Platform::get();
+    cl::Device device = cl::getDevice(platform);
+    cl::Context context(device);
     cl::CommandQueue queue(context, device);
-    cl::Image2D inputImage(context, flags, format, image.w, image.h, 0, rgba.data());
+    cl::Buffer blurmask(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, gaussianSize, gaussianMask.data());
+    cl::Image2D inputImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, rgba.data());
     cl::Image2D bufferImage(context, CL_MEM_READ_WRITE, format, image.w, image.h);
     cl::Image2D outputImage(context, CL_MEM_WRITE_ONLY, format, image.w, image.h);
-    cl::Buffer blurmask(context, flags, gaussianSize, gaussianMask.data());
-    cl::Program program = createKernel(context, device, "../Gpu/kernels.cl", [&]() {
+    cl::Program program = cl::getKernel(context, device, "../Gpu/kernels.cl", [&]() {
         std::stringstream options;
         options << " -Dalpha=" << 1.5;
         options << " -Dgamma=" << 0.0;
@@ -59,6 +59,6 @@ int main(int argc, const char * argv[])
         queue.finish();
     });
 
-    image.write(output, rgb_from_rgba(rgba, image.w, image.h));
+    image.write(output, toRGB(rgba, image.w, image.h));
     return 0;
 }

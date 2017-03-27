@@ -1,16 +1,17 @@
 
 #pragma once
 
-#include "../library/utilities.hpp"
 #include "../library/benchmark.hpp"
 #include "../library/blur.hpp"
 #include "../library/ppm.hpp"
 #include "../library/glfw3.h"
+#include "../Library/misc.hpp"
+#include "../library/clu.hpp"
 
 class App
 {
-    cl::ImageGL outputCL, inputCL;
-    cl::NDRange global, local;
+    cl::ImageGL outputCL, inputCL, bufferCL;
+    cl::NDRange global;
     cl::Buffer maskBuffer;
 
     cl::CommandQueue queue;
@@ -20,11 +21,12 @@ class App
     cl::Device device;
     cl::Kernel kernel;
     
-    int offsetX, offsetY, radius, step;
+    GLuint outputID, inputID, bufferID;
+    int radius;
     double alpha, beta, gamma;
-    GLuint outputID, inputID;
     std::string filename;
     ppm source;
+    bool outputted;
 public:
     App();
     virtual ~App();
