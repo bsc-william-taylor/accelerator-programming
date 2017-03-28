@@ -16,12 +16,60 @@
 #include <functional>
 
 namespace cl {
+    using Events = std::vector<cl::Event>;
+
     template<int L>
     cl::size_t<L> new_size_t(const std::vector<int>& numbers) {
         cl::size_t<L> sz;
         for (int i = 0; i < L; i++)
+        {
             sz[i] = numbers[i];
+        }
         return sz;
+    }
+
+    inline Events getEvents(int number)
+    {
+        return Events(number, { cl::Event() });
+    }
+
+    inline void waitEvents(Events& events)
+    {
+        for (auto& e : events)
+        {
+            e.wait();
+        }
+    }
+
+    template<typename ...Args>
+    inline Kernel getKernel(const Program& p, const char* name, const Args&... args)
+    {
+        Kernel kernel(p, name);
+        int indexCount = 0;
+        cl::arguments(kernel, indexCount, args...);
+        return kernel;
+    }
+
+    template<typename Arg, typename ...Args>
+    inline void arguments(Kernel& kernel, int& index, const Arg& arg, const Args&... args)
+    {
+        arguments(kernel, index, arg);
+        arguments(kernel, index, args...);
+    }
+
+    template<typename A>
+    inline void arguments(Kernel& kernel, int& index, const A& a)
+    {
+        kernel.setArg(index, a);
+        index++;
+    }
+
+    inline void timeEvents(Event a, Event b, double& timetaken)
+    {
+        cl_ulong time_start, time_end;
+        a.getProfilingInfo(CL_PROFILING_COMMAND_START, &time_start);
+        b.getProfilingInfo(CL_PROFILING_COMMAND_END, &time_end);
+        timetaken = (time_end - time_start) / 1000000.0;
     }
 
     inline cl::Context getContext(cl::Platform& platform, cl::Device& device, bool shared)

@@ -36,7 +36,7 @@ kernel void unsharp_mask_pass_one(
 
     for(int i = -radius, index = 0; i <= radius; ++i)
     {
-		blurred += read_imagef(input, sampler, (int2)(x + i, y)) * (float4)hori[index++];
+        blurred += read_imagef(input, sampler, (int2)(x + i, y)) * (float4)hori[index++];
     }
 
     write_imagef(output, (int2)(x, y), blurred);
@@ -57,7 +57,7 @@ kernel void unsharp_mask_pass_two(
 
     for(int i = -radius, index = 0; i <= radius; ++i)
     {
-		blurred += read_imagef(input, sampler, (int2)(x, y + i)) * (float4)vert[index++];
+        blurred += read_imagef(input, sampler, (int2)(x, y + i)) * (float4)vert[index++];
     }
 
     const float4 sharp = (float4)(colour * alpha + blurred * beta + gamma);
