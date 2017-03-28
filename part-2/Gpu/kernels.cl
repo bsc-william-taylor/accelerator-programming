@@ -79,7 +79,7 @@ kernel void unsharp_mask(
     { 
         for(int x = -radius; x <= radius; ++x)
         {
-		    blurred += read_imagef(in, sampler, (int2)(px.x + x, px.y + y)) * mask[index++];
+            blurred += read_imagef(in, sampler, (int2)(px.x + x, px.y + y)) * mask[index++];
         }
      }
 
