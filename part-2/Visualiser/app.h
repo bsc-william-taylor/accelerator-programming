@@ -22,7 +22,7 @@ class App
     cl::Kernel kernel;
     
     GLuint outputID, inputID, bufferID;
-    int radius;
+    int radius, texture;
     double alpha, beta, gamma;
     std::string filename;
     ppm source;
@@ -36,6 +36,10 @@ public:
     void setupOpenCL();
 
     bool hasImage();
+
+    void showSource();
+    void showSecondPass();
+    void showFinalResult();
 
     void updateProgram();
     void updateTexture();

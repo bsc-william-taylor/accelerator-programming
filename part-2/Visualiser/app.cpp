@@ -3,7 +3,7 @@
 #include "App.h"
 
 App::App() :
-    radius(5), outputted(false)
+    radius(5), outputted(false), texture(0)
 {
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &inputID);
@@ -69,6 +69,7 @@ void App::setupMask(bool refreshOutput)
     {
         updateProgram();
         setupTexture(outputID, outputCL, CL_MEM_WRITE_ONLY, source.w, source.h, nullptr);
+        glBindTexture(GL_TEXTURE_2D, texture);
     }
 }
 
@@ -151,5 +152,24 @@ void App::updateFile()
         setupTexture(inputID, inputCL, CL_MEM_READ_ONLY, source.w, source.h, rgba.data());
         setupTexture(bufferID, bufferCL, CL_MEM_READ_WRITE, source.w, source.h, nullptr);
         setupTexture(outputID, outputCL, CL_MEM_WRITE_ONLY, source.w, source.h, nullptr);
+        texture = outputID;
     }
+}
+
+void App::showSource()
+{
+    glBindTexture(GL_TEXTURE_2D, inputID);
+    texture = inputID;
+}
+
+void App::showSecondPass()
+{
+    glBindTexture(GL_TEXTURE_2D, bufferID);
+    texture = bufferID;
+}
+
+void App::showFinalResult()
+{
+    glBindTexture(GL_TEXTURE_2D, outputID);
+    texture = outputID;
 }

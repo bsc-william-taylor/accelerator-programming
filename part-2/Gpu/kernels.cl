@@ -39,7 +39,9 @@ kernel void unsharp_mask_pass_one(
         blurred += read_imagef(input, sampler, (int2)(x + i, y)) * (float4)hori[index++];
     }
 
-    write_imagef(output, (int2)(x, y), blurred);
+    const float4 colour = radius != 0 ? blurred : read_imagef(input, sampler, (int2)(x, y));
+
+    write_imagef(output, (int2)(x, y), colour);
 }
 
 kernel void unsharp_mask_pass_two(

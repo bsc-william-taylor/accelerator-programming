@@ -15,6 +15,12 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev, LPSTR args, int cmd)
             app.updateRadius(-1);
         if (key == GLFW_KEY_UP && state == GLFW_PRESS) 
             app.updateRadius(1);
+        if (key == GLFW_KEY_1 && state == GLFW_PRESS)
+            app.showSource();
+        if (key == GLFW_KEY_2 && state == GLFW_PRESS)
+            app.showSecondPass();
+        if (key == GLFW_KEY_3 && state == GLFW_PRESS)
+            app.showFinalResult();
         if (key == GLFW_KEY_O && state == GLFW_PRESS)
             app.updateFile();
     });
