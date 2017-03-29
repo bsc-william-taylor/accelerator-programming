@@ -88,11 +88,11 @@ int main(int argc, char *argv[])
 {
     const char *ifilename = argc > 1 ? argv[1] : "../library/ghost-town-8k.ppm";
     const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
-    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 13;
+    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 57;
 
     ppm img(ifilename);
-    std::vector<unsigned char> data_sharp(img.w * img.h * img.nchannels);
 
+    std::vector<unsigned char> data_sharp(img.w * img.h * img.nchannels);
     benchmark<1>("cpu-benchmark.csv", [&]() {
         unsharp_mask(data_sharp.data(), img.data.data(), blur_radius, img.w, img.h, img.nchannels);
     });

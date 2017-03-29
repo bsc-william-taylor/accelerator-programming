@@ -1,23 +1,19 @@
 
 CPU
 
-TO FINISH
-
 - Program Time
 
-5,  7380ms
-13, 57695ms
-35, 422581ms
-57, N/A
+5,  7601ms
+13, 57706ms
+35, 430646ms
+57, 1446711ms
 
 - Computation Time
 
-
-5, 
-13, 
-35, 
-57, 
-
+5, 7590ms
+13, 57695ms
+35, 430635ms
+57, 1446700ms
 
 GPU 
 
@@ -27,7 +23,6 @@ GPU
 13, 656ms
 35, 675ms
 57, 851ms
-
 
 - Computation Time
 
