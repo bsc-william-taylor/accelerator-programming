@@ -1,0 +1,37 @@
+
+CPU
+
+TO FINISH
+
+- Program Time
+
+5,  7380ms
+13, 57695ms
+35, 422581ms
+57, N/A
+
+- Computation Time
+
+
+5, 
+13, 
+35, 
+57, 
+
+
+GPU 
+
+- Program Time
+
+5, 704ms
+13, 656ms
+35, 675ms
+57, 851ms
+
+
+- Computation Time
+
+5, 47ms
+13, 79.1ms
+35, 213ms
+57, 281ms

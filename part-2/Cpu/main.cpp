@@ -86,9 +86,9 @@ void unsharp_mask(unsigned char *out, const unsigned char *in,
 
 int main(int argc, char *argv[])
 {
-    const char *ifilename = argc > 1 ? argv[1] : "../library/lena.ppm";
+    const char *ifilename = argc > 1 ? argv[1] : "../library/ghost-town-8k.ppm";
     const char *ofilename = argc > 2 ? argv[2] : "./out.ppm";
-    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 5;
+    const int blur_radius = argc > 3 ? std::atoi(argv[3]) : 13;
 
     ppm img(ifilename);
     std::vector<unsigned char> data_sharp(img.w * img.h * img.nchannels);
