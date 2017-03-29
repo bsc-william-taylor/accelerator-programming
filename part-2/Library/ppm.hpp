@@ -24,7 +24,7 @@ struct ppm {
     std::vector<std::uint8_t> data;
 
     ppm(const char* filename) {
-       read(filename);
+        read(filename);
     }
 
     ppm() = default;

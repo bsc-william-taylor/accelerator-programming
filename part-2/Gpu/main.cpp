@@ -12,50 +12,47 @@ int main(int argc, const char * argv[])
     const auto radius = argc > 3 ? std::atoi(argv[3]) : 57;
 
     ppm image(inFilename);
+
     auto dataRGBA = toRGBA(image.data, image.w, image.h);
     auto timeTaken = 0.0;
+    auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
+    auto gaussianFilter = gaussianFilter1D(radius);
+    auto maskSize = gaussianFilter.size() * sizeof(float);
+    auto maskFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
 
-    benchmark<1>("gpu-benchmark.csv", [&]()
-    {
-        auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
-        auto gaussianFilter = gaussianFilter1D(radius);
-        auto maskSize = gaussianFilter.size() * sizeof(float);
-        auto maskFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
-       
-        cl::Platform platform(cl::Platform::get());
-        cl::Device device(cl::getDevice(platform));
-        cl::Events events(cl::getEvents(2));
-        cl::Context context(device);
-        cl::CommandQueue queue(context, device, CL_QUEUE_PROFILING_ENABLE);
-        cl::Image2D inputImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, dataRGBA.data());
-        cl::Image2D passImage(context, CL_MEM_READ_WRITE, format, image.w, image.h);
-        cl::Image2D outImage(context, CL_MEM_WRITE_ONLY, format, image.w, image.h);
-        cl::Buffer blurMask(context, maskFlags, maskSize, gaussianFilter.data());
-        cl::Program program = cl::getKernel(context, device, "../Gpu/kernels.cl", [&]() {
-            std::stringstream options;
-            options << " -Dalpha=" << 1.5;
-            options << " -Dgamma=" << 0.0;
-            options << " -Dbeta=" << -0.5;
-            options << " -Dradius=" << (int)ceil(radius * 2.57);
-            options << " -Dmasksize=" << maskSize;
-            options << " -cl-fast-relaxed-math";
-            return options.str();
-        });
-
-        auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputImage, passImage, blurMask);
-        auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputImage, passImage, outImage, blurMask);
-        auto region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
-        auto origin = cl::new_size_t<3>({ 0, 0, 0 });
-
-        queue.enqueueNDRangeKernel(passOne, cl::NullRange, { image.w, image.h }, cl::NullRange, nullptr, &events[0]);
-        queue.finish();
-
-        queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { image.w, image.h }, cl::NullRange);
-        queue.enqueueReadImage(outImage, CL_TRUE, origin, region, 0, 0, dataRGBA.data(), nullptr, &events[1]);
-
-        cl::waitEvents(events);
-        cl::timeEvents(events[0], events[1], timeTaken);
+    cl::Platform platform(cl::Platform::get());
+    cl::Device device(cl::getDevice(platform));
+    cl::Events events(cl::getEvents(2));
+    cl::Context context(device);
+    cl::CommandQueue queue(context, device, CL_QUEUE_PROFILING_ENABLE);
+    cl::Image2D inputImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, dataRGBA.data());
+    cl::Image2D passImage(context, CL_MEM_READ_WRITE, format, image.w, image.h);
+    cl::Image2D outImage(context, CL_MEM_WRITE_ONLY, format, image.w, image.h);
+    cl::Buffer blurMask(context, maskFlags, maskSize, gaussianFilter.data());
+    cl::Program program = cl::getKernel(context, device, "../Gpu/kernels.cl", [&]() {
+        std::stringstream options;
+        options << " -Dalpha=" << 1.5;
+        options << " -Dgamma=" << 0.0;
+        options << " -Dbeta=" << -0.5;
+        options << " -Dradius=" << (int)ceil(radius * 2.57);
+        options << " -Dmasksize=" << maskSize;
+        options << " -cl-fast-relaxed-math";
+        return options.str();
     });
+
+    auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputImage, passImage, blurMask);
+    auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputImage, passImage, outImage, blurMask);
+    auto region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
+    auto origin = cl::new_size_t<3>({ 0, 0, 0 });
+
+    queue.enqueueNDRangeKernel(passOne, cl::NullRange, { image.w, image.h }, cl::NullRange, nullptr, &events[0]);
+    queue.finish();
+
+    queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { image.w, image.h }, cl::NullRange);
+    queue.enqueueReadImage(outImage, CL_TRUE, origin, region, 0, 0, dataRGBA.data(), nullptr, &events[1]);
+
+    cl::waitEvents(events);
+    cl::timeEvents(events[0], events[1], timeTaken);
 
     image.write(outFilename, toRGB(dataRGBA, image.w, image.h));
 
