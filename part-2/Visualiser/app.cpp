@@ -72,7 +72,7 @@ void App::updateTexture()
 {
     if (hasImage() && !outputted)
     {
-        std::vector<cl::Memory> objects{ inputCL, outputCL };
+        std::vector<cl::Memory> objects{ inputCL, bufferCL, outputCL };
         queue.enqueueAcquireGLObjects(&objects);
 
         auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputCL, bufferCL, maskBuffer);
@@ -81,7 +81,7 @@ void App::updateTexture()
 
         auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputCL, bufferCL, outputCL, maskBuffer);
         queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { source.w, source.h }, cl::NullRange);
-        queue.finish();
+        queue.enqueueReleaseGLObjects(&objects);
 
         outputted = true;
     }
