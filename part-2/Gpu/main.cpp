@@ -55,7 +55,6 @@ int main(int argc, const char * argv[])
     image.write(outFilename, toRGB(dataRGBA, image.w, image.h));
 
 #ifdef BENCHMARK
-    std::cout << "Time Taken: (ms) " << timeTaken << std::endl;
-    std::cin.get();
+    std::cout << "Compute Time: (ms) " << timeTaken << std::endl;
 #endif
 }

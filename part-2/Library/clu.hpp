@@ -111,22 +111,15 @@ namespace cl {
         cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.size()));
         cl::Program program(context, kernel);
 
-        ss.str(std::string());
-        ss.clear();
-        options(ss);
-
         try
         {
-            
-            program.build(ss.str().c_str());
+            std::stringstream optionsStream;
+            options(optionsStream);
+            program.build(optionsStream.str().c_str());
         }
         catch (const cl::Error& e)
         {
-            std::cerr
-                << "cl::Program Build Error "
-                << e.what()
-                << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device)
-                << std::endl;
+            std::cerr << e.what() << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device) << std::endl;
         }
 
         return program;
