@@ -7,9 +7,9 @@
 
 int main(int argc, const char * argv[])
 {
-    const auto inFilename = argc > 1 ? argv[1] : "../library/ghost-town-8k.ppm";
+    const auto inFilename = argc > 1 ? argv[1] : "../library/lena.ppm";
     const auto outFilename = argc > 2 ? argv[2] : "./out.ppm";
-    const auto radius = argc > 3 ? std::atoi(argv[3]) : 57;
+    const auto radius = argc > 3 ? std::atoi(argv[3]) : 5;
 
     ppm image(inFilename);
 
@@ -19,6 +19,7 @@ int main(int argc, const char * argv[])
     auto gaussianFilter = gaussianFilter1D(radius);
     auto maskSize = gaussianFilter.size() * sizeof(float);
     auto maskFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+    auto maskRadius = (int)ceil(radius * 2.57);
 
     cl::Platform platform(cl::Platform::get());
     cl::Device device(cl::getDevice(platform));
@@ -29,15 +30,13 @@ int main(int argc, const char * argv[])
     cl::Image2D passImage(context, CL_MEM_READ_WRITE, format, image.w, image.h);
     cl::Image2D outImage(context, CL_MEM_WRITE_ONLY, format, image.w, image.h);
     cl::Buffer blurMask(context, maskFlags, maskSize, gaussianFilter.data());
-    cl::Program program = cl::getKernel(context, device, "../Gpu/kernels.cl", [&]() {
-        std::stringstream options;
+    cl::Program program = cl::getKernel(context, device, "../Gpu/kernels.cl", [&](auto& options) {
         options << " -Dalpha=" << 1.5;
         options << " -Dgamma=" << 0.0;
         options << " -Dbeta=" << -0.5;
-        options << " -Dradius=" << (int)ceil(radius * 2.57);
+        options << " -Dradius=" << maskRadius;
         options << " -Dmasksize=" << maskSize;
         options << " -cl-fast-relaxed-math";
-        return options.str();
     });
 
     auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputImage, passImage, blurMask);

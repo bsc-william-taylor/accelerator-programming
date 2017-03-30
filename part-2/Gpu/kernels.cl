@@ -1,32 +1,10 @@
 
-/*
-    When not passed as a command line 
-    option defaults are used
-*/
-#ifndef alpha
-    #define alpha 1.5
-    #define beta -0.5
-    #define gamma 0.0
-    #define radius 5
-    #define masksize 0
-#endif
-
-/*
-    Blur Mask as constant memory if it will fit in constant
-    memory usally 64kb, else global.
-*/
-#if masksize <= 64000 // 64k
-    #define mask_storage constant
-#else 
-    #define mask_storage global
-#endif
-
 const sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 
 kernel void unsharp_mask_pass_one(
     read_only image2d_t input, 
     write_only image2d_t output,
-    mask_storage float* hori
+    constant float* hori
 )
 {   
     const int x = get_global_id(0);
@@ -48,7 +26,7 @@ kernel void unsharp_mask_pass_two(
     read_only image2d_t image,
     read_only image2d_t input, 
     write_only image2d_t output,
-    mask_storage float* vert
+    constant float* vert
 )
 { 
     const int x = get_global_id(0);
@@ -67,10 +45,11 @@ kernel void unsharp_mask_pass_two(
     write_imagef(output, (int2)(x, y), radius == 0 ? colour : sharp);
 }
 
+// Previous 2D single bass blur kernel
 kernel void unsharp_mask(
     read_only image2d_t in, 
     write_only image2d_t out, 
-    mask_storage float* mask, 
+    constant float* mask, 
     const int2 px
 )
 {
@@ -89,30 +68,4 @@ kernel void unsharp_mask(
     const float4 sharp = (float4)(colour * (float4)alpha + blurred * (float4)beta + (float4)gamma);
 
     write_imagef(out, px, radius == 0 ? colour : sharp);
-}
-
-kernel void unsharp_mask_sections(
-    read_only image2d_t input, 
-    write_only image2d_t output,
-    mask_storage float* mask,
-    const int offsetX,
-    const int offsetY
-)
-{
-    const int x = get_global_id(0) + offsetX;
-    const int y = get_global_id(1) + offsetY;
-
-    unsharp_mask(input, output, mask, (int2)(x, y));
-}
-
-kernel void unsharp_mask_full(
-    read_only image2d_t input, 
-    write_only image2d_t output,
-    mask_storage float* mask
-)
-{
-    const int x = get_global_id(0);
-    const int y = get_global_id(1);
-
-    unsharp_mask(input, output, mask, (int2)(x, y));
 }

@@ -95,7 +95,7 @@ namespace cl {
         return devices.front();
     }
 
-    inline cl::Program getKernel(cl::Context& context, cl::Device& device, const char* filename, std::function<std::string()> options)
+    inline cl::Program getKernel(cl::Context& context, cl::Device& device, const char* filename, std::function<void(std::stringstream&)> options)
     {
         std::ifstream file(filename);
         std::stringstream ss;
@@ -111,9 +111,14 @@ namespace cl {
         cl::Program::Sources kernel(1, std::make_pair(src.c_str(), src.size()));
         cl::Program program(context, kernel);
 
+        ss.str(std::string());
+        ss.clear();
+        options(ss);
+
         try
         {
-            program.build(options().c_str());
+            
+            program.build(ss.str().c_str());
         }
         catch (const cl::Error& e)
         {
