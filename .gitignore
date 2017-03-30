@@ -5,7 +5,7 @@
 *.obj
 *.pdb
 
-*.ppm
+#*.ppm
 x86
 ipch/
 
@@ -26,7 +26,7 @@ ipch/
 *.lai
 *.la
 *.a
-*.lib
+#*.lib
 *.db
 
 # Executables
