@@ -4,17 +4,17 @@ CPU
 - Program Time
 
 3,
-5, 239ms,
-13, 1890ms,
-35, 13387ms,
+7, 
+13, 
+35, 
 
 - Computation Time
 
 
 3,
-5, 235ms
-13, 1854ms
-35, 13390ms
+7, 
+13, 
+35, 
 
 
 GPU 
@@ -22,14 +22,14 @@ GPU
 - Program Time
 
 3,
-5, 610ms
-13, 538ms,
-35, 441ms
+7, 
+13, 
+35, 
 
 
 - Computation Time
 
 3,
-5, 2.3ms
-13, 3.1ms
-35, 6.9ms
+7, 
+13, 
+35, 
