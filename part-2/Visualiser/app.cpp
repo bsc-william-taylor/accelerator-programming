@@ -44,23 +44,18 @@ void App::setupOpenCL()
 
 void App::updateProgram()
 {
-    program = getKernel(context, device, "../Gpu/kernels.cl", [&]() {
-        std::stringstream options;
+    program = getKernel(context, device, "../Gpu/kernels.cl", [&](auto& options) {
         options << " -Dalpha=" << 1.5;
         options << " -Dgamma=" << 0.0;
         options << " -Dbeta=" << -0.5;
         options << " -Dradius=" << (int)ceil(radius * 2.57);
-        options << " -cl-unsafe-math-optimizations ";
-        options << " -cl-mad-enable ";
-        return options.str();
+        options << " -cl-fast-relaxed-math";
     });
-
-    kernel = cl::Kernel(program, "unsharp_mask_sections");
 }
 
 void App::setupMask(bool refreshOutput)
 {
-    auto mask = gaussianFilter1D(radius = clamp(radius, 0, 150));
+    auto mask = gaussianFilter1D(radius = clamp(radius, 0, 50));
     auto size = mask.size() * sizeof(float);
 
     maskBuffer = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size, mask.data());
@@ -80,22 +75,14 @@ void App::updateTexture()
         std::vector<cl::Memory> objects{ inputCL, outputCL };
         queue.enqueueAcquireGLObjects(&objects);
 
-        cl::Kernel first(program, "unsharp_mask_pass_one");
-        first.setArg(0, inputCL);
-        first.setArg(1, bufferCL);
-        first.setArg(2, maskBuffer);
-
-        queue.enqueueNDRangeKernel(first, cl::NullRange, { source.w, source.h }, cl::NullRange);
+        auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputCL, bufferCL, maskBuffer);
+        queue.enqueueNDRangeKernel(passOne, cl::NullRange, { source.w, source.h }, cl::NullRange);
         queue.finish();
 
-        cl::Kernel second(program, "unsharp_mask_pass_two");
-        second.setArg(0, inputCL);
-        second.setArg(1, bufferCL);
-        second.setArg(2, outputCL);
-        second.setArg(3, maskBuffer);
-
-        queue.enqueueNDRangeKernel(second, cl::NullRange, { source.w, source.h }, cl::NullRange);
+        auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputCL, bufferCL, outputCL, maskBuffer);
+        queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { source.w, source.h }, cl::NullRange);
         queue.finish();
+
         outputted = true;
     }
 }

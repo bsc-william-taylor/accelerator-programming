@@ -13,19 +13,19 @@ int main(int argc, const char * argv[])
 
     ppm image(inFilename);
 
-    auto dataRGBA = toRGBA(image.data, image.w, image.h);
-    auto timeTaken = 0.0;
-    auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
-    auto gaussianFilter = gaussianFilter1D(radius);
-    auto maskSize = gaussianFilter.size() * sizeof(float);
-    auto maskFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
-    auto maskRadius = (int)ceil(radius * 2.57);
-
     cl::Platform platform(cl::Platform::get());
     cl::Device device(cl::getDevice(platform));
     cl::Events events(cl::getEvents(2));
     cl::Context context(device);
     cl::CommandQueue queue(context, device, CL_QUEUE_PROFILING_ENABLE);
+
+    auto dataRGBA = toRGBA(image.data, image.w, image.h);
+    auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
+    auto gaussianFilter = gaussianFilter1D(radius);
+    auto maskSize = gaussianFilter.size() * sizeof(float);
+    auto maskFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+    auto timeTaken = 0.0;
+
     cl::Image2D inputImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, dataRGBA.data());
     cl::Image2D passImage(context, CL_MEM_READ_WRITE, format, image.w, image.h);
     cl::Image2D outImage(context, CL_MEM_WRITE_ONLY, format, image.w, image.h);
@@ -34,8 +34,7 @@ int main(int argc, const char * argv[])
         options << " -Dalpha=" << 1.5;
         options << " -Dgamma=" << 0.0;
         options << " -Dbeta=" << -0.5;
-        options << " -Dradius=" << maskRadius;
-        options << " -Dmasksize=" << maskSize;
+        options << " -Dradius=" << (int)ceil(radius * 2.57);
         options << " -cl-fast-relaxed-math";
     });
 
@@ -47,14 +46,16 @@ int main(int argc, const char * argv[])
     queue.enqueueNDRangeKernel(passOne, cl::NullRange, { image.w, image.h }, cl::NullRange, nullptr, &events[0]);
     queue.finish();
 
-    queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { image.w, image.h }, cl::NullRange);
-    queue.enqueueReadImage(outImage, CL_TRUE, origin, region, 0, 0, dataRGBA.data(), nullptr, &events[1]);
+    queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { image.w, image.h }, cl::NullRange, nullptr, &events[1]);
+    queue.enqueueReadImage(outImage, CL_TRUE, origin, region, 0, 0, dataRGBA.data());
 
     cl::waitEvents(events);
     cl::timeEvents(events[0], events[1], timeTaken);
 
     image.write(outFilename, toRGB(dataRGBA, image.w, image.h));
 
+#ifdef BENCHMARK
     std::cout << "Time Taken: (ms) " << timeTaken << std::endl;
     std::cin.get();
+#endif
 }

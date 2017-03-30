@@ -1,32 +1,32 @@
 
 CPU
 
-- Program Time
+- Real Time
 
-3,
-7,  
-13,
-35,
+3, 2506ms
+7, 15051ms
+13, 63293ms
+35, 470390ms
 
-- Computation Time
+- Compute Time
 
-3, 
-7, 
-13, 
-35, 
+3, 2500ms
+7, 15042ms
+13, 63284ms
+35, 470381ms
 
 GPU 
 
-- Program Time
+- Real Time
 
-3, 
-7, 
-13, 
-35, 
+3, 299ms
+7, 389ms
+13, 398ms
+35, 440ms
 
-- Computation Time
+- Compute Time
 
-3, 
-7,
-13, 
-35, 
+3, 39.1ms
+7, 53.9ms
+13, 102.39ms
+35, 208.6ms
