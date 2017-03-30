@@ -3,30 +3,30 @@ CPU
 
 - Program Time
 
+3,
 5,  7601ms
 13, 57706ms
 35, 430646ms
-57, 1446711ms
 
 - Computation Time
 
+3, 
 5, 7590ms
 13, 57695ms
 35, 430635ms
-57, 1446700ms
 
 GPU 
 
 - Program Time
 
+3, 
 5, 704ms
 13, 656ms
 35, 675ms
-57, 851ms
 
 - Computation Time
 
+3, 
 5, 47ms
 13, 79.1ms
 35, 213ms
-57, 281ms
