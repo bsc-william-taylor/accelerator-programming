@@ -7,18 +7,19 @@ const float PI = 3.14159265359f;
 
 inline std::vector<float> gaussianFilter2D(const int radii)
 {
-    const int radius = (int)ceil(radii * 2.57);
-    std::vector<float> kernel;
-    kernel.reserve(radius * 2 + 1 * radius * 2 + 1);
+    auto radius = (int)ceil(radii * 2.57);
+    auto deviation = 2 * radii * radii;
     auto sum = 0.0f;
+
+    std::vector<float> kernel;
+    kernel.reserve((int)pow(radius * 2 + 1, 2));
 
     for (int row = -radius; row <= radius; row++)
     {
         for (int col = -radius; col <= radius; col++)
         {
-            const auto deviation = 2 * radii * radii;
-            const auto distance = sqrt(col*col + row*row);
-            const auto value = (float)(exp(-(distance*distance) / deviation)) / (PI * deviation);
+            const auto dist = sqrt(pow(col, 2) + pow(row, 2));
+            const auto value = (float)(exp(-(pow(dist, 2.0f)) / deviation)) / (PI * deviation);
             kernel.push_back(value);
             sum += value;
         }
@@ -34,17 +35,17 @@ inline std::vector<float> gaussianFilter2D(const int radii)
 
 inline std::vector<float> gaussianFilter1D(const int radii)
 {
-    const auto radius = (int)ceil(radii * 2.57);
-    std::vector<float> kernel;
-    kernel.reserve(radius * 2 + 1);
-
+    auto radius = (int)ceil(radii * 2.57);
+    auto deviation = 2 * radii * radii;
     auto sum = 0.0f;
-    for (int col = -radius; col <= radius; col++)
+
+    std::vector<float> kernel(radius * 2 + 1);
+  
+    for (auto col = -radius; col <= radius; col++)
     {
-        const auto deviation = 2 * radii * radii;
-        const auto distance = sqrt(col*col);
-        const auto value = (float)(exp(-(pow(distance, 2.0f)) / deviation)) / (PI * deviation);
-        kernel.push_back(value);
+        const auto dist = sqrt(col*col);
+        const auto value = (float)(exp(-(pow(dist, 2.0f)) / deviation)) / (PI * deviation);
+        kernel[col+radius] = value;
         sum += value;
     }
 
