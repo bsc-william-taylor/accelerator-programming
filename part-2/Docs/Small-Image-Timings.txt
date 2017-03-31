@@ -29,7 +29,7 @@ GPU
 
 - Compute Time
 
-3, 2.5ms
-7, 2.33ms
+3, 2.2ms
+7, 2.7ms
 13, 3.4ms
 35, 7.0ms
