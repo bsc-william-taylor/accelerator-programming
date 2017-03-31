@@ -28,11 +28,6 @@ namespace cl {
         return sz;
     }
 
-    inline Events getEvents(int number)
-    {
-        return Events(number, { cl::Event() });
-    }
-
     inline void waitEvents(Events& events)
     {
         for (auto& e : events)

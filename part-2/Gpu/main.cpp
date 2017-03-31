@@ -9,13 +9,13 @@ int main(int argc, const char * argv[])
 {
     const auto inFilename = argc > 1 ? argv[1] : "../library/lena.ppm";
     const auto outFilename = argc > 2 ? argv[2] : "./out.ppm";
-    const auto radius = argc > 3 ? std::atoi(argv[3]) : 3;
+    const auto radius = argc > 3 ? std::atoi(argv[3]) : 5;
 
     ppm image(inFilename);
 
     cl::Platform platform(cl::Platform::get());
     cl::Device device(cl::getDevice(platform));
-    cl::Events events(cl::getEvents(2));
+    cl::Events events(2);
     cl::Context context(device);
     cl::CommandQueue queue(context, device, CL_QUEUE_PROFILING_ENABLE);
     cl::Program program = cl::getKernel(context, device, "kernels.cl", [&](auto& options) {
