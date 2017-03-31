@@ -63,21 +63,23 @@ void App::setupMask(bool refreshOutput)
 
 void App::updateTexture() 
 {
-    if (hasImage() && !outputted)
+    if (!hasImage() || outputted)
     {
-        std::vector<cl::Memory> objects{ inputCL, bufferCL, outputCL };
-        queue.enqueueAcquireGLObjects(&objects);
-
-        auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputCL, bufferCL, maskBuffer, blurRadius);
-        queue.enqueueNDRangeKernel(passOne, cl::NullRange, { source.w, source.h }, cl::NullRange);
-        queue.finish();
-
-        auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputCL, bufferCL, outputCL, maskBuffer, blurRadius);
-        queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { source.w, source.h }, cl::NullRange);
-        queue.enqueueReleaseGLObjects(&objects);
-
-        outputted = true;
+        return;
     }
+
+    std::vector<cl::Memory> objects{ inputCL, bufferCL, outputCL };
+    queue.enqueueAcquireGLObjects(&objects);
+
+    auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputCL, bufferCL, maskBuffer, blurRadius);
+    queue.enqueueNDRangeKernel(passOne, cl::NullRange, { source.w, source.h }, cl::NullRange);
+    queue.finish();
+
+    auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputCL, bufferCL, outputCL, maskBuffer, blurRadius);
+    queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { source.w, source.h }, cl::NullRange);
+    queue.enqueueReleaseGLObjects(&objects);
+
+    outputted = true;
 }
 
 std::string App::toString()
