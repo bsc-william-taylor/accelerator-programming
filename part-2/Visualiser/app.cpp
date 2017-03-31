@@ -135,6 +135,7 @@ void App::updateFile()
         setupTexture(bufferID, bufferCL, CL_MEM_READ_WRITE, source.w, source.h, nullptr);
         setupTexture(outputID, outputCL, CL_MEM_WRITE_ONLY, source.w, source.h, nullptr);
         texture = outputID;
+        outputted = false;
     }
 }
 
