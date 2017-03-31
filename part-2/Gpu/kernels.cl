@@ -4,7 +4,8 @@ const sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 kernel void unsharp_mask_pass_one(
     read_only image2d_t input, 
     write_only image2d_t output,
-    constant float* hori
+    constant float* hori,
+    const int radius
 )
 {   
     const int x = get_global_id(0);
@@ -26,7 +27,8 @@ kernel void unsharp_mask_pass_two(
     read_only image2d_t image,
     read_only image2d_t input, 
     write_only image2d_t output,
-    constant float* vert
+    constant float* vert,
+    const int radius
 )
 { 
     const int x = get_global_id(0);
@@ -43,29 +45,4 @@ kernel void unsharp_mask_pass_two(
     const float4 sharp = (float4)(colour * (float4)alpha + blurred * (float4)beta + (float4)gamma);
 
     write_imagef(output, (int2)(x, y), radius == 0 ? colour : sharp);
-}
-
-// Previous 2D single bass blur kernel
-kernel void unsharp_mask(
-    read_only image2d_t in, 
-    write_only image2d_t out, 
-    constant float* mask, 
-    const int2 px
-)
-{
-    float4 blurred = (float4)0.0f;
-    int index = 0;
-
-    for(int y = -radius; y <= radius; ++y) 
-    { 
-        for(int x = -radius; x <= radius; ++x)
-        {
-            blurred += read_imagef(in, sampler, (int2)(px.x + x, px.y + y)) * mask[index++];
-        }
-     }
-
-    const float4 colour = read_imagef(in, sampler, px);   
-    const float4 sharp = (float4)(colour * (float4)alpha + blurred * (float4)beta + (float4)gamma);
-
-    write_imagef(out, px, radius == 0 ? colour : sharp);
 }

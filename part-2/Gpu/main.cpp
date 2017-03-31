@@ -9,7 +9,7 @@ int main(int argc, const char * argv[])
 {
     const auto inFilename = argc > 1 ? argv[1] : "../library/lena.ppm";
     const auto outFilename = argc > 2 ? argv[2] : "./out.ppm";
-    const auto radius = argc > 3 ? std::atoi(argv[3]) : 5;
+    const auto radius = argc > 3 ? std::atoi(argv[3]) : 3;
 
     ppm image(inFilename);
 
@@ -18,28 +18,28 @@ int main(int argc, const char * argv[])
     cl::Events events(cl::getEvents(2));
     cl::Context context(device);
     cl::CommandQueue queue(context, device, CL_QUEUE_PROFILING_ENABLE);
+    cl::Program program = cl::getKernel(context, device, "kernels.cl", [&](auto& options) {
+        options << " -Dalpha=" << 1.5;
+        options << " -Dgamma=" << 0.0;
+        options << " -Dbeta=" << -0.5;
+        options << " -cl-fast-relaxed-math";
+    });
 
     auto dataRGBA = toRGBA(image.data, image.w, image.h);
     auto format = cl::ImageFormat{ CL_RGBA, CL_UNORM_INT8 };
     auto gaussianFilter = gaussianFilter1D(radius);
     auto maskSize = gaussianFilter.size() * sizeof(float);
     auto maskFlags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+    auto blurRadius = (int)ceil(radius * 2.57);
     auto timeTaken = 0.0;
-
+   
     cl::Image2D inputImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, format, image.w, image.h, 0, dataRGBA.data());
     cl::Image2D passImage(context, CL_MEM_READ_WRITE, format, image.w, image.h);
     cl::Image2D outImage(context, CL_MEM_WRITE_ONLY, format, image.w, image.h);
     cl::Buffer blurMask(context, maskFlags, maskSize, gaussianFilter.data());
-    cl::Program program = cl::getKernel(context, device, "../Gpu/kernels.cl", [&](auto& options) {
-        options << " -Dalpha=" << 1.5;
-        options << " -Dgamma=" << 0.0;
-        options << " -Dbeta=" << -0.5;
-        options << " -Dradius=" << (int)ceil(radius * 2.57);
-        options << " -cl-fast-relaxed-math";
-    });
 
-    auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputImage, passImage, blurMask);
-    auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputImage, passImage, outImage, blurMask);
+    auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputImage, passImage, blurMask, blurRadius);
+    auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputImage, passImage, outImage, blurMask, blurRadius);
     auto region = cl::new_size_t<3>({ (int)image.w, (int)image.h, 1 });
     auto origin = cl::new_size_t<3>({ 0, 0, 0 });
 
@@ -56,5 +56,6 @@ int main(int argc, const char * argv[])
 
 #ifdef BENCHMARK
     std::cout << "Compute Time: (ms) " << timeTaken << std::endl;
+    std::cin.get();
 #endif
 }

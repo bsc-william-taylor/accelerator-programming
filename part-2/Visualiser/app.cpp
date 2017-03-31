@@ -38,17 +38,10 @@ void App::setupOpenCL()
     device = getDevice(platform);
     context = getContext(platform, device, true);
     queue = cl::CommandQueue(context, device);
-
-    updateProgram();
-}
-
-void App::updateProgram()
-{
     program = getKernel(context, device, "../Gpu/kernels.cl", [&](auto& options) {
         options << " -Dalpha=" << 1.5;
         options << " -Dgamma=" << 0.0;
         options << " -Dbeta=" << -0.5;
-        options << " -Dradius=" << (int)ceil(radius * 2.57);
         options << " -cl-fast-relaxed-math";
     });
 }
@@ -57,12 +50,12 @@ void App::setupMask(bool refreshOutput)
 {
     auto mask = gaussianFilter1D(radius = clamp(radius, 0, 50));
     auto size = mask.size() * sizeof(float);
-
+    
     maskBuffer = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size, mask.data());
+    blurRadius = (int)ceil(radius * 2.57);
 
     if (refreshOutput && !filename.empty())
     {
-        updateProgram();
         setupTexture(outputID, outputCL, CL_MEM_WRITE_ONLY, source.w, source.h, nullptr);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
@@ -75,11 +68,11 @@ void App::updateTexture()
         std::vector<cl::Memory> objects{ inputCL, bufferCL, outputCL };
         queue.enqueueAcquireGLObjects(&objects);
 
-        auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputCL, bufferCL, maskBuffer);
+        auto passOne = cl::getKernel(program, "unsharp_mask_pass_one", inputCL, bufferCL, maskBuffer, blurRadius);
         queue.enqueueNDRangeKernel(passOne, cl::NullRange, { source.w, source.h }, cl::NullRange);
         queue.finish();
 
-        auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputCL, bufferCL, outputCL, maskBuffer);
+        auto passTwo = cl::getKernel(program, "unsharp_mask_pass_two", inputCL, bufferCL, outputCL, maskBuffer, blurRadius);
         queue.enqueueNDRangeKernel(passTwo, cl::NullRange, { source.w, source.h }, cl::NullRange);
         queue.enqueueReleaseGLObjects(&objects);
 

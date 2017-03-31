@@ -22,7 +22,7 @@ class App
     cl::Kernel kernel;
     
     GLuint outputID, inputID, bufferID;
-    int radius, texture;
+    int blurRadius, radius, texture;
     double alpha, beta, gamma;
     std::string filename;
     ppm source;
@@ -41,7 +41,6 @@ public:
     void showSecondPass();
     void showFinalResult();
 
-    void updateProgram();
     void updateTexture();
     void updateRadius(int increase);
     void updateFile();

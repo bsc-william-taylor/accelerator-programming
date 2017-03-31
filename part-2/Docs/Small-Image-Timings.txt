@@ -21,15 +21,15 @@ GPU
 
 - Real Time
 
-3, 206ms
-7, 285ms
-13, 255ms
-35, 184ms
+3, 5ms
+7, 8ms
+13, 9ms
+35, 12ms
 
 
 - Compute Time
 
-3, 1.78ms
+3, 2.5ms
 7, 2.33ms
-13, 3.0ms
-35, 6.1ms
+13, 3.4ms
+35, 7.0ms
