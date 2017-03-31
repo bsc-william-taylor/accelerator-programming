@@ -4,12 +4,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="OpenCL Files">
-      <UniqueIdentifier>{D011BB44-1BF7-4113-997B-A081035B40D8}</UniqueIdentifier>
-      <Extensions>cl</Extensions>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
     <none Include="kernels.cl" />
   </ItemGroup>
 </Project>
